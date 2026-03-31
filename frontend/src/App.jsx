@@ -1,0 +1,52 @@
+
+import React from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import LandingPage from "./pages/LandingPage";
+import PatientSignup from "./pages/Signup";
+import Login from "./pages/Login";
+import API from "./api/api";
+import { useState } from "react";
+import Context from "./util/context";
+import { useEffect } from "react";
+import PatientDashboard from "./pages/Patient/PatientDashboard";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
+import AdminDoctors from "./pages/Admin/AdminDoctors";
+
+function App() {
+  const [sessionLoading, setSessionLoading] = useState(true);
+  const [session, setSession] = useState(null);
+  const getSession = async () => {
+    try {
+      setSessionLoading(true);
+      const { data } = await API.get('/auth/session');
+      setSession(data);
+    } catch (err) {
+      setSession(null);
+    } finally {
+      setSessionLoading(false);
+    }
+  };
+  useEffect(() => {
+    getSession();
+  }, []);
+  return (
+    <Context.Provider value={{ session, setSession, sessionLoading, setSessionLoading }}>
+      <Router>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+
+          <Route path="/patient/signup" element={<PatientSignup />} />
+          <Route path="/login" element={<Login />} />
+
+          <Route path='/patient/dashboard' element={<PatientDashboard />} />
+
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/doctors" element ={<AdminDoctors/>} />
+        </Routes>
+      </Router>
+    </Context.Provider>
+
+  );
+}
+
+export default App;
