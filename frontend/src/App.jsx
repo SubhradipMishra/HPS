@@ -11,7 +11,7 @@ import { useEffect } from "react";
 import PatientDashboard from "./pages/Patient/PatientDashboard";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminDoctors from "./pages/Admin/AdminDoctors";
-
+import AdminDepartments from "./pages/Admin/AdminDepartments";
 function App() {
   const [sessionLoading, setSessionLoading] = useState(true);
   const [session, setSession] = useState(null);
@@ -42,6 +42,7 @@ function App() {
 
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/doctors" element ={<AdminDoctors/>} />
+          <Route path="/admin/departments" element={<AdminDepartments />} />
         </Routes>
       </Router>
     </Context.Provider>

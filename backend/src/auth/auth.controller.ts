@@ -8,7 +8,9 @@ export const login = async (req: Request, res: Response) => {
     const { identifier, password } = req.body;
     const result = await loginService(identifier, password);
 
-    
+    console.log("HIT", identifier, password);
+
+
     res.cookie("AuthToken", result.token, {
       httpOnly: true,        // not accessible via JS
       secure: process.env.NODE_ENV === "production", // HTTPS only in prod
@@ -25,6 +27,6 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
-export const getSession = async(req:any , res:Response)=>{
+export const getSession = async (req: any, res: Response) => {
   return res.json(req.user);
 }
