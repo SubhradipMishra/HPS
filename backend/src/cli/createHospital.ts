@@ -15,9 +15,31 @@ async function createHospitalCLI() {
       validate: (val: string) => (val ? true : "Name is required"),
     });
 
-    const location = await input({
-      message: "Hospital Location:",
-      validate: (val: string) => (val ? true : "Location is required"),
+    const address = await input({
+      message: "Hospital Address:",
+      validate: (val: string) => (val ? true : "Address is required"),
+    });
+
+    const city = await input({
+      message: "City:",
+      validate: (val: string) => (val ? true : "City is required"),
+    });
+
+    const state = await input({
+      message: "State:",
+      validate: (val: string) => (val ? true : "State is required"),
+    });
+
+    const latitude = await input({
+      message: "Latitude (example: 30.7333):",
+      validate: (val: string) =>
+        !isNaN(Number(val)) ? true : "Enter a valid latitude",
+    });
+
+    const longitude = await input({
+      message: "Longitude (example: 76.7794):",
+      validate: (val: string) =>
+        !isNaN(Number(val)) ? true : "Enter a valid longitude",
     });
 
     const regNo = await input({
@@ -29,7 +51,18 @@ async function createHospitalCLI() {
       },
     });
 
-    const hospital = await HospitalModel.create({ name, location, regNo });
+    const hospital = await HospitalModel.create({
+      name,
+      address,
+      city,
+      state,
+      regNo,
+
+      location: {
+        type: "Point",
+        coordinates: [Number(longitude), Number(latitude)],
+      },
+    });
 
     console.log(chalk.blueBright("🏥 Hospital created successfully!"));
     console.log(hospital);

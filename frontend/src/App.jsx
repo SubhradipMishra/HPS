@@ -9,6 +9,8 @@ import { useState } from "react";
 import Context from "./util/context";
 import { useEffect } from "react";
 import PatientDashboard from "./pages/Patient/PatientDashboard";
+import PatientAppointments from "./pages/Patient/PatientAppointments";
+import PatientProfile from "./pages/Patient/PatientProfile";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminDoctors from "./pages/Admin/AdminDoctors";
 import AdminDepartments from "./pages/Admin/AdminDepartments";
@@ -20,7 +22,7 @@ function App() {
       setSessionLoading(true);
       const { data } = await API.get('/auth/session');
       setSession(data);
-    } catch (err) {
+    } catch {
       setSession(null);
     } finally {
       setSessionLoading(false);
@@ -39,6 +41,8 @@ function App() {
           <Route path="/login" element={<Login />} />
 
           <Route path='/patient/dashboard' element={<PatientDashboard />} />
+          <Route path='/patient/appointments' element={<PatientAppointments />} />
+          <Route path='/patient/profile' element={<PatientProfile />} />
 
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/doctors" element ={<AdminDoctors/>} />

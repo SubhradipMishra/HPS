@@ -9,6 +9,8 @@ import AuthRouter from "./auth/auth.route";
 import DepartmentRouter from "./department/department.route";
 import { createDoctor } from "./doctor/doctor.controller";
 import DoctorRouter from "./doctor/doctor.route";
+import DoctorAvailabilityRouter from "./doctoravailability/doctoravailability.route";
+import AppointmentRouter from "./appointment/appointment.route";
 
 dotenv.config();
 
@@ -23,9 +25,11 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(cors({
-    origin: true,
+    origin: process.env.FRONTEND_URL as string,
     credentials: true
-}));
+
+}))
+
 app.use(cookieParser());
 
 
@@ -35,6 +39,7 @@ app.use("/patient", PatientRouter);
 app.use("/auth", AuthRouter);
 app.use("/department", DepartmentRouter);
 app.use("/doctor", DoctorRouter);
-
+app.use("/doctor-availability", DoctorAvailabilityRouter);
+app.use("/appointment", AppointmentRouter);
 
 app.listen(process.env.PORT, () => console.log(`Server running on ${process.env.PORT}`))

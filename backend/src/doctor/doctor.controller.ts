@@ -66,3 +66,40 @@ export const getDoctorsByHospital = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+
+
+
+export const getDoctorsByDepartment = async (req: Request, res: Response) => {
+  try {
+    const { hospitalId, departmentId } = req.params;
+
+    const doctors = await DoctorModel.find({
+      hospitalId,
+      departmentId,
+      isActive: true,
+    })
+      .select("name specialization experience")
+      .sort({ experience: -1 });
+
+    if (!doctors.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No doctors found in this department",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      total: doctors.length,
+      doctors,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching doctors",
+      error: error.message,
+    });
+  }
+};

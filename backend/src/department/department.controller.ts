@@ -35,10 +35,17 @@ export const createDepartment = async (req: Request, res: Response) => {
 
 export const getAllDepartments = async (req: Request, res: Response) => {
   try {
-    const admin = (req as any).user;
+    const user = (req as any).user;
+    const hospitalId = (req.query.hospitalId as string) || user?.hospitalId;
+
+    if (!hospitalId) {
+      return res.status(400).json({
+        message: "hospitalId is required",
+      });
+    }
 
     const departments = await DepartmentModel.find({
-      hospitalId: admin.hospitalId,
+      hospitalId,
       isActive: true,
     }).sort({ createdAt: -1 });
 
