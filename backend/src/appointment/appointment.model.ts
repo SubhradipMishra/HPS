@@ -42,6 +42,9 @@ const appointmentSchema = new Schema<IAppointment>(
             enum: ["booked", "cancelled", "completed"],
             default: "booked",
         },
+        remarks: {
+            type: String,
+        },
     },
     { timestamps: true }
 );

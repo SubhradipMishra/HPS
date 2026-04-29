@@ -304,6 +304,7 @@ export const getAllAppointments = async (req: Request, res: Response) => {
 export const completeAppointment = async (req: Request, res: Response) => {
     try {
         const { appointmentId } = req.params;
+        const { remarks } = req.body;
 
         const appointment = await AppointmentModel.findById(appointmentId);
 
@@ -322,6 +323,9 @@ export const completeAppointment = async (req: Request, res: Response) => {
         }
 
         appointment.status = "completed";
+        if (remarks) {
+            appointment.remarks = remarks;
+        }
         await appointment.save();
 
         return res.status(200).json({

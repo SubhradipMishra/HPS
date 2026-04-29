@@ -10,6 +10,7 @@ interface IAppointment extends Document {
     slotTime: string;    // example: 10:40
 
     status: "booked" | "cancelled" | "completed";
+    remarks?: string;
 
     createdAt: Date;
     updatedAt: Date;

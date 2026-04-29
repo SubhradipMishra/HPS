@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Avatar,
+  Button,
   Empty,
   Input,
   Skeleton,
@@ -10,6 +11,7 @@ import {
   Modal,
   Tooltip,
 } from "antd";
+const { TextArea } = Input;
 import {
   CalendarOutlined,
   CheckCircleOutlined,
@@ -42,6 +44,31 @@ function formatWeekday(dateString) {
   return new Intl.DateTimeFormat("en-IN", { weekday: "long" }).format(
     new Date(dateString)
   );
+}
+
+/** Returns true if the appointment date+slotTime is in the past */
+function isSlotPassed(dateStr, slotTime) {
+  if (!dateStr || !slotTime) return false;
+  try {
+    // slotTime comes as "HH:MM" or "HH:MM AM/PM"
+    const dateObj = new Date(dateStr);
+    const timeParts = slotTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (!timeParts) return false;
+
+    let hours = parseInt(timeParts[1], 10);
+    const minutes = parseInt(timeParts[2], 10);
+    const meridian = timeParts[3];
+
+    if (meridian) {
+      if (meridian.toUpperCase() === "PM" && hours !== 12) hours += 12;
+      if (meridian.toUpperCase() === "AM" && hours === 12) hours = 0;
+    }
+
+    dateObj.setHours(hours, minutes, 0, 0);
+    return dateObj <= new Date();
+  } catch {
+    return false;
+  }
 }
 
 const STATUS_TABS = [
@@ -151,13 +178,24 @@ export default function DoctorAppointments() {
   }, [appointments, searchText]);
 
   /* ─── Actions ─── */
-  const handleComplete = async (id) => {
+  const [completeModalVisible, setCompleteModalVisible] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [remarks, setRemarks] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const handleComplete = async () => {
+    if (!selectedAppointment) return;
     try {
-      await API.patch(`/appointment/${id}/complete`);
+      setActionLoading(true);
+      await API.patch(`/appointment/${selectedAppointment._id}/complete`, { remarks });
       messageApi.success("Appointment marked as completed");
+      setCompleteModalVisible(false);
+      setRemarks("");
       fetchAppointments();
     } catch (err) {
       messageApi.error(err?.response?.data?.message || "Failed to complete");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -171,27 +209,21 @@ export default function DoctorAppointments() {
     }
   };
 
-  const confirmAction = (type, id, patientName) => {
-    Modal.confirm({
-      title: type === "complete" ? "Complete Appointment" : "Cancel Appointment",
-      icon:
-        type === "complete" ? (
-          <CheckCircleOutlined style={{ color: "#22c55e" }} />
-        ) : (
-          <ExclamationCircleOutlined style={{ color: "#ef4444" }} />
-        ),
-      content: `Are you sure you want to ${type} the appointment for ${patientName || "this patient"}?`,
-      okText: type === "complete" ? "Yes, Complete" : "Yes, Cancel",
-      okButtonProps: {
-        className:
-          type === "complete"
-            ? "bg-green-500 hover:bg-green-600 border-none"
-            : "bg-red-500 hover:bg-red-600 border-none",
-      },
-      cancelText: "Go Back",
-      onOk: () =>
-        type === "complete" ? handleComplete(id) : handleCancel(id),
-    });
+  const confirmAction = (type, appt, patientName) => {
+    if (type === "complete") {
+      setSelectedAppointment(appt);
+      setCompleteModalVisible(true);
+    } else {
+      Modal.confirm({
+        title: "Cancel Appointment",
+        icon: <ExclamationCircleOutlined style={{ color: "#ef4444" }} />,
+        content: `Are you sure you want to cancel the appointment for ${patientName || "this patient"}?`,
+        okText: "Yes, Cancel",
+        okButtonProps: { className: "bg-red-500 hover:bg-red-600 border-none" },
+        cancelText: "Go Back",
+        onOk: () => handleCancel(appt._id),
+      });
+    }
   };
 
   /* ─── Doctor initials ─── */
@@ -210,6 +242,42 @@ export default function DoctorAppointments() {
       subtitle="View & manage all appointments"
     >
       {contextHolder}
+
+      <Modal
+        title={<div className="flex items-center gap-2 text-green-600"><CheckCircleOutlined /> Complete Appointment</div>}
+        open={completeModalVisible}
+        onCancel={() => { setCompleteModalVisible(false); setRemarks(""); }}
+        footer={[
+          <Button key="cancel" onClick={() => { setCompleteModalVisible(false); setRemarks(""); }}>
+            Cancel
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            loading={actionLoading}
+            onClick={handleComplete}
+            className="bg-green-500 hover:bg-green-600 border-none"
+          >
+            Complete Appointment
+          </Button>
+        ]}
+      >
+        <div className="py-4">
+          <p className="text-sm text-gray-500 mb-4">
+            Are you sure you want to mark the appointment for <span className="font-bold text-gray-800">{selectedAppointment?.patientId?.name}</span> as completed?
+          </p>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Completion Remarks (Optional)</label>
+            <TextArea
+              rows={4}
+              placeholder="Add any medical notes or remarks here..."
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              className="rounded-xl border-slate-200 focus:border-green-400 focus:ring-green-100"
+            />
+          </div>
+        </div>
+      </Modal>
       <div className="space-y-6">
         {/* ── Back button + Doctor header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
@@ -466,18 +534,24 @@ export default function DoctorAppointments() {
                     {/* Actions for booked only */}
                     {appt.status === "booked" && (
                       <div className="flex items-center gap-2 pt-3 border-t border-slate-100">
-                        <button
-                          onClick={() =>
-                            confirmAction(
-                              "complete",
-                              appt._id,
-                              patientName
-                            )
-                          }
-                          className="flex-1 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-600 text-xs font-semibold hover:bg-emerald-100 transition flex items-center justify-center gap-1.5"
-                        >
-                          <CheckCircleOutlined /> Complete
-                        </button>
+                        {isSlotPassed(appt.date, appt.slotTime) ? (
+                          <button
+                            onClick={() =>
+                              confirmAction(
+                                "complete",
+                                appt,
+                                patientName
+                              )
+                            }
+                            className="flex-1 px-3 py-2 rounded-xl bg-emerald-50 text-emerald-600 text-xs font-semibold hover:bg-emerald-100 transition flex items-center justify-center gap-1.5"
+                          >
+                            <CheckCircleOutlined /> Complete
+                          </button>
+                        ) : (
+                          <span className="flex-1 px-3 py-2 rounded-xl bg-slate-50 text-slate-400 text-xs font-medium flex items-center justify-center gap-1.5 cursor-default">
+                            <ClockCircleOutlined /> Upcoming
+                          </span>
+                        )}
                         <button
                           onClick={() =>
                             confirmAction("cancel", appt._id, patientName)
@@ -492,11 +566,19 @@ export default function DoctorAppointments() {
                     {/* Completed / Cancelled info */}
                     {appt.status !== "booked" && (
                       <div className="pt-3 border-t border-slate-100">
-                        <span className="text-[11px] text-gray-400">
-                          {appt.status === "completed"
-                            ? "✓ This appointment was completed"
-                            : "✕ This appointment was cancelled"}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[11px] text-gray-400">
+                            {appt.status === "completed"
+                              ? "✓ This appointment was completed"
+                              : "✕ This appointment was cancelled"}
+                          </span>
+                          {appt.status === "completed" && appt.remarks && (
+                            <div className="bg-slate-50 rounded-lg p-2 border border-slate-100 mt-1">
+                              <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Doctor's Remarks:</p>
+                              <p className="text-[11px] text-gray-600 italic">"{appt.remarks}"</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

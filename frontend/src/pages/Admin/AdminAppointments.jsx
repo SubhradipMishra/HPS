@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useMemo } from "react";
 import { Avatar, Button, Empty, Input, Select, Skeleton, Table, Tag, message, Modal } from "antd";
+const { TextArea } = Input;
 import {
   CalendarOutlined,
   CheckCircleOutlined,
@@ -21,6 +22,27 @@ function formatDate(dateString) {
     month: "short",
     year: "numeric",
   }).format(new Date(dateString));
+}
+
+/** Returns true if the appointment date+slotTime is in the past */
+function isSlotPassed(dateStr, slotTime) {
+  if (!dateStr || !slotTime) return false;
+  try {
+    const dateObj = new Date(dateStr);
+    const timeParts = slotTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (!timeParts) return false;
+    let hours = parseInt(timeParts[1], 10);
+    const minutes = parseInt(timeParts[2], 10);
+    const meridian = timeParts[3];
+    if (meridian) {
+      if (meridian.toUpperCase() === "PM" && hours !== 12) hours += 12;
+      if (meridian.toUpperCase() === "AM" && hours === 12) hours = 0;
+    }
+    dateObj.setHours(hours, minutes, 0, 0);
+    return dateObj <= new Date();
+  } catch {
+    return false;
+  }
 }
 
 const statusConfig = {
@@ -139,13 +161,24 @@ export default function AdminAppointments() {
   }, [doctors, filterDept]);
 
   /* ─── Actions ─── */
-  const handleComplete = async (appointmentId) => {
+  const [completeModalVisible, setCompleteModalVisible] = useState(false);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [remarks, setRemarks] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const handleComplete = async () => {
+    if (!selectedAppointment) return;
     try {
-      await API.patch(`/appointment/${appointmentId}/complete`);
+      setActionLoading(true);
+      await API.patch(`/appointment/${selectedAppointment._id}/complete`, { remarks });
       messageApi.success("Appointment marked as completed");
+      setCompleteModalVisible(false);
+      setRemarks("");
       fetchAppointments();
     } catch (err) {
       messageApi.error(err?.response?.data?.message || "Failed to complete appointment");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -159,20 +192,21 @@ export default function AdminAppointments() {
     }
   };
 
-  const confirmAction = (type, appointmentId, patientName) => {
-    Modal.confirm({
-      title: type === "complete" ? "Complete Appointment" : "Cancel Appointment",
-      icon: type === "complete" ? <CheckCircleOutlined style={{ color: "#22c55e" }} /> : <ExclamationCircleOutlined style={{ color: "#ef4444" }} />,
-      content: `Are you sure you want to ${type} the appointment for ${patientName || "this patient"}?`,
-      okText: type === "complete" ? "Yes, Complete" : "Yes, Cancel",
-      okButtonProps: {
-        className: type === "complete"
-          ? "bg-green-500 hover:bg-green-600 border-none"
-          : "bg-red-500 hover:bg-red-600 border-none",
-      },
-      cancelText: "Go Back",
-      onOk: () => type === "complete" ? handleComplete(appointmentId) : handleCancel(appointmentId),
-    });
+  const confirmAction = (type, appointment, patientName) => {
+    if (type === "complete") {
+      setSelectedAppointment(appointment);
+      setCompleteModalVisible(true);
+    } else {
+      Modal.confirm({
+        title: "Cancel Appointment",
+        icon: <ExclamationCircleOutlined style={{ color: "#ef4444" }} />,
+        content: `Are you sure you want to cancel the appointment for ${patientName || "this patient"}?`,
+        okText: "Yes, Cancel",
+        okButtonProps: { className: "bg-red-500 hover:bg-red-600 border-none" },
+        cancelText: "Go Back",
+        onOk: () => handleCancel(appointment._id),
+      });
+    }
   };
 
   /* ─── Table columns ─── */
@@ -180,6 +214,7 @@ export default function AdminAppointments() {
     {
       title: "Patient",
       key: "patient",
+      ellipsis: true,
       render: (_, record) => {
         const name = record.patientId?.name || "Patient";
         return (
@@ -187,9 +222,9 @@ export default function AdminAppointments() {
             <Avatar size={34} style={{ background: "linear-gradient(135deg,#ef4444,#ec4899)", fontWeight: 600, fontSize: 12 }}>
               {name.split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase()}
             </Avatar>
-            <div>
-              <span className="text-sm font-semibold text-gray-800 block">{name}</span>
-              <span className="text-xs text-gray-400">{record.patientId?.email || record.patientId?.mobileNumber || ""}</span>
+            <div className="min-w-0 flex-1">
+              <span className="text-sm font-semibold text-gray-800 block truncate">{name}</span>
+              <span className="text-xs text-gray-400 truncate block">{record.patientId?.email || record.patientId?.mobileNumber || ""}</span>
             </div>
           </div>
         );
@@ -198,10 +233,11 @@ export default function AdminAppointments() {
     {
       title: "Doctor",
       key: "doctor",
+      ellipsis: true,
       render: (_, record) => (
-        <div>
-          <span className="text-sm font-medium text-gray-700 block">{record.doctorId?.name || "Doctor"}</span>
-          <span className="text-xs text-gray-400">{record.doctorId?.specialization || ""}</span>
+        <div className="min-w-0">
+          <span className="text-sm font-medium text-gray-700 block truncate">{record.doctorId?.name || "Doctor"}</span>
+          <span className="text-xs text-gray-400 truncate block">{record.doctorId?.specialization || ""}</span>
         </div>
       ),
     },
@@ -228,12 +264,21 @@ export default function AdminAppointments() {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (v) => {
+      render: (v, record) => {
         const cfg = statusConfig[v] || statusConfig.booked;
         return (
-          <span className={`text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1 w-fit ${cfg.color}`}>
-            {cfg.icon} {v}
-          </span>
+          <div className="flex flex-col gap-1">
+            <span className={`text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1 w-fit ${cfg.color}`}>
+              {cfg.icon} {v}
+            </span>
+            {v === "completed" && record.remarks && (
+              <Tooltip title={record.remarks}>
+                <span className="text-[10px] text-gray-400 italic truncate max-w-[100px] cursor-help">
+                  Note: {record.remarks}
+                </span>
+              </Tooltip>
+            )}
+          </div>
         );
       },
     },
@@ -246,12 +291,18 @@ export default function AdminAppointments() {
         }
         return (
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => confirmAction("complete", record._id, record.patientId?.name)}
-              className="px-3 py-1.5 rounded-lg bg-green-50 text-green-600 text-xs font-semibold hover:bg-green-100 transition flex items-center gap-1"
-            >
-              <CheckCircleOutlined /> Complete
-            </button>
+            {isSlotPassed(record.date, record.slotTime) ? (
+              <button
+                onClick={() => confirmAction("complete", record, record.patientId?.name)}
+                className="px-3 py-1.5 rounded-lg bg-green-50 text-green-600 text-xs font-semibold hover:bg-green-100 transition flex items-center gap-1"
+              >
+                <CheckCircleOutlined /> Complete
+              </button>
+            ) : (
+              <span className="px-3 py-1.5 rounded-lg bg-slate-50 text-slate-400 text-xs font-medium flex items-center gap-1">
+                <ClockCircleOutlined /> Upcoming
+              </span>
+            )}
             <button
               onClick={() => confirmAction("cancel", record._id, record.patientId?.name)}
               className="px-3 py-1.5 rounded-lg bg-red-50 text-red-500 text-xs font-semibold hover:bg-red-100 transition flex items-center gap-1"
@@ -274,6 +325,42 @@ export default function AdminAppointments() {
   return (
     <AdminLayout title="Appointments" subtitle="Manage all hospital appointments">
       {contextHolder}
+
+      <Modal
+        title={<div className="flex items-center gap-2 text-green-600"><CheckCircleOutlined /> Complete Appointment</div>}
+        open={completeModalVisible}
+        onCancel={() => { setCompleteModalVisible(false); setRemarks(""); }}
+        footer={[
+          <Button key="cancel" onClick={() => { setCompleteModalVisible(false); setRemarks(""); }}>
+            Cancel
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            loading={actionLoading}
+            onClick={handleComplete}
+            className="bg-green-500 hover:bg-green-600 border-none"
+          >
+            Complete Appointment
+          </Button>
+        ]}
+      >
+        <div className="py-4">
+          <p className="text-sm text-gray-500 mb-4">
+            Are you sure you want to mark the appointment for <span className="font-bold text-gray-800">{selectedAppointment?.patientId?.name}</span> as completed?
+          </p>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Completion Remarks (Optional)</label>
+            <TextArea
+              rows={4}
+              placeholder="Add any medical notes or remarks here..."
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              className="rounded-xl border-slate-200 focus:border-green-400 focus:ring-green-100"
+            />
+          </div>
+        </div>
+      </Modal>
       <div className="space-y-6">
 
         {/* ── Stat Cards ── */}
@@ -352,6 +439,7 @@ export default function AdminAppointments() {
               loading={loading}
               pagination={{ pageSize: 8, showSizeChanger: false }}
               className="caresync-table"
+              scroll={{ x: 'max-content' }}
               locale={{
                 emptyText: (
                   <Empty
