@@ -14,6 +14,7 @@ import PatientProfile from "./pages/Patient/PatientProfile";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminDoctors from "./pages/Admin/AdminDoctors";
 import AdminDepartments from "./pages/Admin/AdminDepartments";
+import AdminAppointments from "./pages/Admin/AdminAppointments";
 function App() {
   const [sessionLoading, setSessionLoading] = useState(true);
   const [session, setSession] = useState(null);
@@ -47,6 +48,7 @@ function App() {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/doctors" element ={<AdminDoctors/>} />
           <Route path="/admin/departments" element={<AdminDepartments />} />
+          <Route path="/admin/appointments" element={<AdminAppointments />} />
         </Routes>
       </Router>
     </Context.Provider>

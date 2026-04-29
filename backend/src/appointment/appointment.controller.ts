@@ -249,3 +249,127 @@ export const cancelAppointment = async (req: Request, res: Response) => {
         });
     }
 };
+
+
+
+/* =========================================================
+   GET ALL APPOINTMENTS FOR A HOSPITAL (Admin)
+   ========================================================= */
+
+export const getAllAppointments = async (req: Request, res: Response) => {
+    try {
+        const { hospitalId } = req.params;
+        const { status, departmentId, doctorId } = req.query;
+
+        const filter: any = { hospitalId };
+
+        if (status && status !== "all") {
+            filter.status = status;
+        }
+
+        if (departmentId) {
+            filter.departmentId = departmentId;
+        }
+
+        if (doctorId) {
+            filter.doctorId = doctorId;
+        }
+
+        const appointments = await AppointmentModel.find(filter)
+            .populate("patientId", "name email mobileNumber")
+            .populate("doctorId", "name specialization")
+            .populate("hospitalId", "name city")
+            .populate("departmentId", "name")
+            .sort({ date: -1, slotTime: -1 });
+
+        return res.status(200).json({
+            success: true,
+            total: appointments.length,
+            appointments,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server error",
+        });
+    }
+};
+
+
+
+/* =========================================================
+   COMPLETE APPOINTMENT (Admin)
+   ========================================================= */
+
+export const completeAppointment = async (req: Request, res: Response) => {
+    try {
+        const { appointmentId } = req.params;
+
+        const appointment = await AppointmentModel.findById(appointmentId);
+
+        if (!appointment) {
+            return res.status(404).json({
+                success: false,
+                message: "Appointment not found",
+            });
+        }
+
+        if (appointment.status !== "booked") {
+            return res.status(400).json({
+                success: false,
+                message: `Cannot complete an appointment with status "${appointment.status}"`,
+            });
+        }
+
+        appointment.status = "completed";
+        await appointment.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Appointment marked as completed",
+            appointment,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server error",
+        });
+    }
+};
+
+
+
+/* =========================================================
+   GET ALL APPOINTMENTS OF A DOCTOR
+   ========================================================= */
+
+export const getDoctorAppointments = async (req: Request, res: Response) => {
+    try {
+        const { doctorId } = req.params;
+        const { status } = req.query;
+
+        const filter: any = { doctorId };
+
+        if (status && status !== "all") {
+            filter.status = status;
+        }
+
+        const appointments = await AppointmentModel.find(filter)
+            .populate("patientId", "name email mobileNumber")
+            .populate("doctorId", "name specialization")
+            .populate("hospitalId", "name city")
+            .populate("departmentId", "name")
+            .sort({ date: -1, slotTime: -1 });
+
+        return res.status(200).json({
+            success: true,
+            total: appointments.length,
+            appointments,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server error",
+        });
+    }
+};

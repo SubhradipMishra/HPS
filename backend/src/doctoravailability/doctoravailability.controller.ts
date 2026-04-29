@@ -60,6 +60,7 @@ export const createDoctorAvailability = async (req: Request, res: Response) => {
             data: availability,
         });
     } catch (error: any) {
+        console.log("Error creating doctor availability:", error.message);
         return res.status(500).json({
             success: false,
             message: error.message || "Server error",
