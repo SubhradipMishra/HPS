@@ -31,6 +31,8 @@ const Login = () => {
     
        if(res.data.role=="admin")
         navigate("/admin/dashboard");
+       if(res.data.role=="doctor")
+        navigate("/doctor/dashboard");
       if(res.data.role=="patient")
         navigate("/patient/dashboard")
     } catch (err) {

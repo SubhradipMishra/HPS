@@ -11,6 +11,9 @@ export interface IDoctor {
   departmentId: Types.ObjectId;
   createdBy: Types.ObjectId;
 
+  password?: string;
+  role?: string;
+
   isActive: boolean;
 
   createdAt?: Date;

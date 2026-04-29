@@ -48,6 +48,16 @@ const DoctorSchema = new Schema<IDoctor>(
       required: true,
     },
 
+    password: {
+      type: String,
+      default: "2005",
+    },
+
+    role: {
+      type: String,
+      default: "doctor",
+    },
+
     isActive: {
       type: Boolean,
       default: true,

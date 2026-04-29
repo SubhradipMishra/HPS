@@ -276,8 +276,8 @@ export default function AdminDashboard() {
                       percent={75} 
                       showInfo={false} 
                       strokeColor={{ from: '#ec4899', to: '#ef4444' }}
-                      trailColor="#fff1f2"
-                      strokeWidth={10}
+                      railColor="#fff1f2"
+                      size={10}
                     />
                   </div>
                </div>
@@ -327,8 +327,8 @@ export default function AdminDashboard() {
                         percent={dept.percent} 
                         showInfo={false} 
                         strokeColor={dept.color}
-                        trailColor="#fce7f3"
-                        size="small"
+                        railColor="#fce7f3"
+                        size={4}
                       />
                     </div>
                   ))}

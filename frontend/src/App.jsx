@@ -15,7 +15,14 @@ import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminDoctors from "./pages/Admin/AdminDoctors";
 import AdminDepartments from "./pages/Admin/AdminDepartments";
 import AdminAppointments from "./pages/Admin/AdminAppointments";
-import DoctorAppointments from "./pages/Admin/DoctorAppointments";
+import AdminDoctorAppointments from "./pages/Admin/DoctorAppointments";
+
+// Doctor Pages
+import DoctorDashboard from "./pages/Doctor/DoctorDashboard";
+import DoctorAppointments from "./pages/Doctor/DoctorAppointments";
+import DoctorPatients from "./pages/Doctor/DoctorPatients";
+import DoctorPrescriptions from "./pages/Doctor/DoctorPrescriptions";
+import DoctorDocuments from "./pages/Doctor/DoctorDocuments";
 function App() {
   const [sessionLoading, setSessionLoading] = useState(true);
   const [session, setSession] = useState(null);
@@ -48,9 +55,16 @@ function App() {
 
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/doctors" element ={<AdminDoctors/>} />
-          <Route path="/admin/doctors/:doctorId/appointments" element={<DoctorAppointments />} />
+          <Route path="/admin/doctors/:doctorId/appointments" element={<AdminDoctorAppointments />} />
           <Route path="/admin/departments" element={<AdminDepartments />} />
           <Route path="/admin/appointments" element={<AdminAppointments />} />
+
+          {/* Doctor Routes */}
+          <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+          <Route path="/doctor/appointments" element={<DoctorAppointments />} />
+          <Route path="/doctor/patients" element={<DoctorPatients />} />
+          <Route path="/doctor/prescriptions" element={<DoctorPrescriptions />} />
+          <Route path="/doctor/documents" element={<DoctorDocuments />} />
         </Routes>
       </Router>
     </Context.Provider>

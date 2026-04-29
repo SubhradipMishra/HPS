@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { loginService } from "./auth.service";
 import { AdminModel } from "../admin/admin.model";
 import { PatientModel } from "../patient/patient.model";
+import DoctorModel from "../doctor/doctor.model";
 
 export const login = async (req: Request, res: Response) => {
   try {
@@ -43,6 +44,26 @@ export const getSession = async (req: any, res: Response) => {
         name: admin.name,
         email: admin.email,
         hospitalId: admin.hospitalId,
+      });
+    }
+
+    if (req.user?.role === "doctor") {
+      const doctor = await DoctorModel.findById(req.user.id).populate("departmentId").select("name email hospitalId specialization departmentId mobileNumber experience");
+
+      if (!doctor) {
+        return res.status(404).json({ message: "Doctor not found" });
+      }
+
+      return res.json({
+        id: doctor._id,
+        role: "doctor",
+        name: doctor.name,
+        email: doctor.email,
+        hospitalId: doctor.hospitalId,
+        specialization: doctor.specialization,
+        department: doctor.departmentId,
+        mobileNumber: doctor.mobileNumber,
+        experience: doctor.experience,
       });
     }
 
