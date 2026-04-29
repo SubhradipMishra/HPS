@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { Avatar, Button, Drawer, Form, Input, Select, InputNumber, message, Table, Tag } from "antd";
 import {
   SafetyOutlined,
@@ -7,6 +8,7 @@ import {
   EditOutlined,
   DeleteOutlined,
   MedicineBoxOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import AdminLayout from "../../components/AdminLayout";
 import Context from "../../util/context";
@@ -14,6 +16,7 @@ import API from "../../api/api";
 
 export default function AdminDoctors() {
   const { session } = useContext(Context);
+  const navigate = useNavigate();
   const [doctors, setDoctors] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -83,7 +86,12 @@ export default function AdminDoctors() {
             {record.name.split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase()}
           </Avatar>
           <div>
-            <span className="text-sm font-semibold text-gray-800 block">{record.name}</span>
+            <span
+              onClick={() => navigate(`/admin/doctors/${record._id}/appointments`)}
+              className="text-sm font-semibold text-gray-800 block cursor-pointer hover:text-pink-600 transition"
+            >
+              {record.name}
+            </span>
             <span className="text-xs text-gray-400">{record.email}</span>
           </div>
         </div>
@@ -129,8 +137,15 @@ export default function AdminDoctors() {
     {
       title: "Action",
       key: "action",
-      render: () => (
+      render: (_, record) => (
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate(`/admin/doctors/${record._id}/appointments`)}
+            className="w-8 h-8 rounded-lg bg-gray-50 text-pink-500 hover:bg-pink-50 transition flex items-center justify-center"
+            title="View Appointments"
+          >
+            <CalendarOutlined />
+          </button>
           <button className="w-8 h-8 rounded-lg bg-gray-50 text-blue-500 hover:bg-blue-50 transition flex items-center justify-center">
             <EditOutlined />
           </button>
