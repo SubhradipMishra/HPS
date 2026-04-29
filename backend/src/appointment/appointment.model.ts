@@ -45,6 +45,24 @@ const appointmentSchema = new Schema<IAppointment>(
         remarks: {
             type: String,
         },
+        prescriptionFile: {
+            type: String,
+        },
+        patientReport: {
+            type: String,
+        },
+        patientReportCategory: {
+            type: String,
+            enum: ["Lab Report", "Prescription", "Other"],
+        },
+        review: {
+            type: String,
+        },
+        rating: {
+            type: Number,
+            min: 1,
+            max: 5,
+        },
     },
     { timestamps: true }
 );

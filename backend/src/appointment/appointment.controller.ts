@@ -301,10 +301,11 @@ export const getAllAppointments = async (req: Request, res: Response) => {
    COMPLETE APPOINTMENT (Admin)
    ========================================================= */
 
-export const completeAppointment = async (req: Request, res: Response) => {
+export const completeAppointment = async (req: any, res: Response) => {
     try {
         const { appointmentId } = req.params;
         const { remarks } = req.body;
+        const prescriptionFile = req.file ? req.file.filename : undefined;
 
         const appointment = await AppointmentModel.findById(appointmentId);
 
@@ -312,6 +313,14 @@ export const completeAppointment = async (req: Request, res: Response) => {
             return res.status(404).json({
                 success: false,
                 message: "Appointment not found",
+            });
+        }
+
+        // 🔒 Security Check: Only Admin or the assigned Doctor can complete
+        if (req.user.role === "doctor" && req.user.id !== appointment.doctorId.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. You can only complete your own appointments.",
             });
         }
 
@@ -326,11 +335,109 @@ export const completeAppointment = async (req: Request, res: Response) => {
         if (remarks) {
             appointment.remarks = remarks;
         }
+        if (prescriptionFile) {
+            appointment.prescriptionFile = prescriptionFile;
+        }
+        
         await appointment.save();
 
         return res.status(200).json({
             success: true,
             message: "Appointment marked as completed",
+            appointment,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server error",
+        });
+    }
+};
+
+/* =========================================================
+   UPLOAD PATIENT REPORT
+   ========================================================= */
+export const uploadPatientReport = async (req: any, res: Response) => {
+    try {
+        const { appointmentId } = req.params;
+        const { category } = req.body;
+        const patientReport = req.file ? req.file.filename : undefined;
+
+        if (!patientReport) {
+            return res.status(400).json({
+                success: false,
+                message: "No report file provided",
+            });
+        }
+
+        const appointment = await AppointmentModel.findById(appointmentId);
+
+        if (!appointment) {
+            return res.status(404).json({
+                success: false,
+                message: "Appointment not found",
+            });
+        }
+
+        // 🔒 Security Check: Only the patient who booked the appointment can upload
+        if (req.user.role === "patient" && req.user.id !== appointment.patientId.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. You can only upload reports for your own appointments.",
+            });
+        }
+
+        appointment.patientReport = patientReport;
+        if (category) {
+            appointment.patientReportCategory = category;
+        }
+        await appointment.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Report uploaded successfully",
+            appointment,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server error",
+        });
+    }
+};
+
+/* =========================================================
+   SUBMIT REVIEW
+   ========================================================= */
+export const submitReview = async (req: any, res: Response) => {
+    try {
+        const { appointmentId } = req.params;
+        const { review, rating } = req.body;
+
+        const appointment = await AppointmentModel.findById(appointmentId);
+
+        if (!appointment) {
+            return res.status(404).json({
+                success: false,
+                message: "Appointment not found",
+            });
+        }
+
+        // 🔒 Security Check: Only the patient who booked can review
+        if (req.user.role === "patient" && req.user.id !== appointment.patientId.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. You can only review your own appointments.",
+            });
+        }
+
+        appointment.review = review;
+        appointment.rating = rating;
+        await appointment.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Review submitted successfully",
             appointment,
         });
     } catch (error: any) {

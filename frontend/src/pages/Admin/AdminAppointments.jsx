@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useMemo } from "react";
-import { Avatar, Button, Empty, Input, Select, Skeleton, Table, Tag, message, Modal } from "antd";
+import { Avatar, Button, Empty, Input, Select, Skeleton, Table, Tag, message, Modal, Tooltip, Upload } from "antd";
 const { TextArea } = Input;
 import {
   CalendarOutlined,
@@ -10,6 +10,7 @@ import {
   MedicineBoxOutlined,
   TeamOutlined,
   ExclamationCircleOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
 import AdminLayout from "../../components/AdminLayout";
 import Context from "../../util/context";
@@ -164,16 +165,27 @@ export default function AdminAppointments() {
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [remarks, setRemarks] = useState("");
+  const [fileList, setFileList] = useState([]);
   const [actionLoading, setActionLoading] = useState(false);
 
   const handleComplete = async () => {
     if (!selectedAppointment) return;
     try {
       setActionLoading(true);
-      await API.patch(`/appointment/${selectedAppointment._id}/complete`, { remarks });
+      const formData = new FormData();
+      formData.append("remarks", remarks);
+      if (fileList.length > 0) {
+        formData.append("prescription", fileList[0]);
+      }
+
+      await API.patch(`/appointment/${selectedAppointment._id}/complete`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
       messageApi.success("Appointment marked as completed");
       setCompleteModalVisible(false);
       setRemarks("");
+      setFileList([]);
       fetchAppointments();
     } catch (err) {
       messageApi.error(err?.response?.data?.message || "Failed to complete appointment");
@@ -271,6 +283,22 @@ export default function AdminAppointments() {
             <span className={`text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1 w-fit ${cfg.color}`}>
               {cfg.icon} {v}
             </span>
+            {record.patientReport && (
+              <Tag 
+                className="text-[10px] rounded-full border-none bg-blue-50 text-blue-600 font-bold w-fit flex items-center gap-1 mt-1 cursor-pointer hover:bg-blue-100"
+                onClick={() => window.open(`http://localhost:7070/uploads/prescriptions/${record.patientReport}`, "_blank")}
+              >
+                <TeamOutlined style={{ fontSize: 10 }} /> {record.patientReportCategory || "Report"}
+              </Tag>
+            )}
+            {record.prescriptionFile && (
+              <Tag 
+                className="text-[10px] rounded-full border-none bg-pink-50 text-pink-600 font-bold w-fit flex items-center gap-1 mt-1 cursor-pointer hover:bg-pink-100"
+                onClick={() => window.open(`http://localhost:7070/uploads/prescriptions/${record.prescriptionFile}`, "_blank")}
+              >
+                <MedicineBoxOutlined style={{ fontSize: 10 }} /> Prescription
+              </Tag>
+            )}
             {v === "completed" && record.remarks && (
               <Tooltip title={record.remarks}>
                 <span className="text-[10px] text-gray-400 italic truncate max-w-[100px] cursor-help">
@@ -358,6 +386,25 @@ export default function AdminAppointments() {
               onChange={(e) => setRemarks(e.target.value)}
               className="rounded-xl border-slate-200 focus:border-green-400 focus:ring-green-100"
             />
+          </div>
+
+          <div className="mt-6 space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest block">Attachment (Prescription / Lab Report)</label>
+            <Upload
+              onRemove={() => setFileList([])}
+              beforeUpload={(file) => {
+                setFileList([file]);
+                return false;
+              }}
+              fileList={fileList}
+              maxCount={1}
+              className="w-full"
+            >
+              <Button icon={<UploadOutlined />} className="w-full h-12 rounded-xl border-dashed border-slate-300 hover:border-pink-400 hover:text-pink-600 transition-all">
+                Select Document (PDF, Image)
+              </Button>
+            </Upload>
+            <p className="text-[10px] text-slate-400 italic mt-1 px-1">Max size: 5MB. Supported: PDF, JPG, PNG</p>
           </div>
         </div>
       </Modal>

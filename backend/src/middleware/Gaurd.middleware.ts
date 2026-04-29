@@ -68,3 +68,25 @@ export const patientOnly = (
     return res.status(401).json({ message: "Invalid token" });
   }
 };
+
+// ✅ Admin or Doctor middleware
+export const adminOrDoctor = (
+  req: any,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const token = req.cookies.AuthToken;
+    if (!token) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
+    if (decoded.role !== "admin" && decoded.role !== "doctor") {
+      return res.status(403).json({ message: "Access denied. Admins or Doctors only." });
+    }
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+};

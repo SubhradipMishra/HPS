@@ -11,6 +11,11 @@ interface IAppointment extends Document {
 
     status: "booked" | "cancelled" | "completed";
     remarks?: string;
+    prescriptionFile?: string;
+    patientReport?: string;
+    patientReportCategory?: "Lab Report" | "Prescription" | "Other";
+    review?: string;
+    rating?: number;
 
     createdAt: Date;
     updatedAt: Date;

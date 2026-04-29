@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Alert, Button, Empty, Input, Select, Skeleton, Tag, message } from "antd";
-import { CalendarCheck2, Clock3, Compass, Hospital, LocateFixed, MapPinned, Search, Stethoscope, XCircle } from "lucide-react";
+import { Alert, Button, Empty, Input, Select, Skeleton, Tag, message, Modal, Upload, Rate } from "antd";
+import { CalendarCheck2, Clock3, Compass, Hospital, LocateFixed, MapPinned, Search, Stethoscope, XCircle, UploadCloud, FileText, CheckCircle2, Star } from "lucide-react";
 import PatientLayout from "../../components/PatientLayout";
 import Context from "../../util/context";
 import API from "../../api/api";
@@ -85,6 +85,19 @@ export default function PatientAppointments() {
     slotTime: "",
   });
   const [messageApi, contextHolder] = message.useMessage();
+
+  // Upload Report State
+  const [uploadModalVisible, setUploadModalVisible] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState(null);
+  const [fileList, setFileList] = useState([]);
+  const [reportCategory, setReportCategory] = useState("Lab Report");
+
+  // Review State
+  const [reviewModalVisible, setReviewModalVisible] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [rating, setRating] = useState(5);
+  const [reviewText, setReviewText] = useState("");
 
   const fetchAppointments = useCallback(async () => {
     if (!session?.id) return;
@@ -370,9 +383,151 @@ export default function PatientAppointments() {
     }
   };
 
+  const handleUploadReport = async () => {
+    if (!selectedAppointmentId || fileList.length === 0) return;
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      // fileList[0] is the raw File object from beforeUpload
+      formData.append("report", fileList[0]);
+      formData.append("category", reportCategory);
+
+      await API.patch(`/appointment/${selectedAppointmentId}/patient-report`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      messageApi.success("Report uploaded successfully. Your doctor can now review it.");
+      setUploadModalVisible(false);
+      setFileList([]);
+      await fetchAppointments();
+    } catch (error) {
+      messageApi.error(error?.response?.data?.message || "Failed to upload report.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!selectedAppointmentId) return;
+    try {
+      setReviewLoading(true);
+      await API.patch(`/appointment/${selectedAppointmentId}/review`, {
+        review: reviewText,
+        rating: rating,
+      });
+      messageApi.success("Thank you for your feedback!");
+      setReviewModalVisible(false);
+      setReviewText("");
+      setRating(5);
+      await fetchAppointments();
+    } catch (error) {
+      messageApi.error(error?.response?.data?.message || "Failed to submit review.");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
   return (
     <PatientLayout>
       {contextHolder}
+
+      <Modal
+        title={<div className="flex items-center gap-2 text-slate-800"><Star size={20} className="text-amber-500 fill-amber-500" /> Rate your Experience</div>}
+        open={reviewModalVisible}
+        onCancel={() => { setReviewModalVisible(false); setReviewText(""); setRating(5); }}
+        footer={[
+          <Button key="cancel" onClick={() => { setReviewModalVisible(false); setReviewText(""); setRating(5); }}>
+            Cancel
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            loading={reviewLoading}
+            onClick={handleSubmitReview}
+            className="bg-slate-900 border-none h-10 px-6 rounded-xl"
+          >
+            Submit Feedback
+          </Button>
+        ]}
+      >
+        <div className="py-6 space-y-6">
+          <div className="text-center">
+            <p className="text-sm text-slate-500 mb-4">How was your consultation with the doctor?</p>
+            <Rate value={rating} onChange={(v) => setRating(v)} className="text-3xl" />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Share your thoughts</label>
+            <Input.TextArea
+              rows={4}
+              placeholder="Tell us about your experience..."
+              value={reviewText}
+              onChange={(e) => setReviewText(e.target.value)}
+              className="rounded-2xl border-slate-200 focus:border-sky-400 focus:ring-sky-100"
+            />
+          </div>
+        </div>
+      </Modal>
+
+      <Modal
+        title={<div className="flex items-center gap-2 text-slate-800"><UploadCloud size={20} className="text-sky-600" /> Upload Medical Report</div>}
+        open={uploadModalVisible}
+        onCancel={() => { setUploadModalVisible(false); setFileList([]); setReportCategory("Lab Report"); }}
+        footer={[
+          <Button key="cancel" onClick={() => { setUploadModalVisible(false); setFileList([]); setReportCategory("Lab Report"); }}>
+            Cancel
+          </Button>,
+          <Button
+            key="submit"
+            type="primary"
+            loading={uploading}
+            disabled={fileList.length === 0}
+            onClick={handleUploadReport}
+            className="bg-slate-900 border-none h-10 px-6 rounded-xl"
+          >
+            Upload Now
+          </Button>
+        ]}
+      >
+        <div className="py-6">
+          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+            Please upload any relevant documents (blood reports, MRI scans, previous prescriptions) that will help your doctor understand your condition better.
+          </p>
+          
+          <div className="mb-6 space-y-2">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Document Category</label>
+            <Select 
+              value={reportCategory}
+              onChange={(v) => setReportCategory(v)}
+              className="w-full h-11 rounded-xl"
+              options={[
+                { label: "Lab Report", value: "Lab Report" },
+                { label: "Prescription", value: "Prescription" },
+                { label: "Other", value: "Other" },
+              ]}
+            />
+          </div>
+
+          <Upload
+            onRemove={() => setFileList([])}
+            beforeUpload={(file) => {
+              setFileList([file]);
+              return false;
+            }}
+            fileList={fileList}
+            maxCount={1}
+          >
+            <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-8 bg-slate-50 hover:bg-slate-100 hover:border-sky-300 transition-all cursor-pointer w-full group">
+               <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                  <FileText size={24} className="text-slate-400 group-hover:text-sky-500" />
+               </div>
+               <p className="text-sm font-bold text-slate-700">Click to Select Document</p>
+               <p className="text-[10px] text-slate-400 mt-1">PDF, JPG, PNG up to 5MB</p>
+            </div>
+          </Upload>
+        </div>
+      </Modal>
+
       <div className="space-y-6">
         <section className="grid gap-4 lg:grid-cols-3">
           <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
@@ -707,11 +862,73 @@ export default function PatientAppointments() {
                     </div>
                   </div>
 
-                  {appointment.status === "booked" && (
-                    <Button danger icon={<XCircle size={16} />} onClick={() => handleCancel(appointment._id)}>
-                      Cancel
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {appointment.status === "booked" && (
+                      <>
+                        <Button 
+                          icon={appointment.patientReport ? <CheckCircle2 size={16} className="text-green-500" /> : <UploadCloud size={16} />} 
+                          className="rounded-xl h-10 px-4 border-slate-200 text-slate-600 font-medium hover:border-sky-400 hover:text-sky-600 transition-all"
+                          onClick={() => {
+                            setSelectedAppointmentId(appointment._id);
+                            setUploadModalVisible(true);
+                          }}
+                        >
+                          {appointment.patientReport ? "Update Report" : "Upload Report"}
+                        </Button>
+                        <Button 
+                          danger 
+                          icon={<XCircle size={16} />} 
+                          onClick={() => handleCancel(appointment._id)}
+                          className="rounded-xl h-10 px-4"
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    )}
+                    {appointment.status === "completed" && (
+                      <div className="flex items-center gap-3">
+                        {appointment.review ? (
+                          <div className="flex flex-col items-end gap-1">
+                            <Rate disabled defaultValue={appointment.rating} className="text-[12px]" />
+                            <div className="max-w-[200px] text-right">
+                              <p className="text-[11px] text-slate-600 italic leading-tight line-clamp-2">
+                                "{appointment.review}"
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button 
+                            icon={<Star size={14} />} 
+                            onClick={() => {
+                              setSelectedAppointmentId(appointment._id);
+                              setReviewModalVisible(true);
+                            }}
+                            className="rounded-xl h-9 px-4 border-amber-200 text-amber-600 font-bold hover:border-amber-400 hover:text-amber-700 transition-all bg-amber-50/50"
+                          >
+                            Rate Visit
+                          </Button>
+                        )}
+                        {appointment.patientReport && (
+                          <Tag 
+                            color="success" 
+                            className="rounded-full px-3 py-1 flex items-center gap-1 border-none bg-green-50 text-green-700 font-bold cursor-pointer hover:bg-green-100"
+                            onClick={() => window.open(`http://localhost:7070/uploads/prescriptions/${appointment.patientReport}`, "_blank")}
+                          >
+                            <CheckCircle2 size={12} /> {appointment.patientReportCategory || "Report"} Attached
+                          </Tag>
+                        )}
+                      </div>
+                    )}
+                    {appointment.prescriptionFile && (
+                      <Tag 
+                        color="error" 
+                        className="rounded-full px-3 py-1 flex items-center gap-1 border-none bg-rose-50 text-rose-600 font-bold cursor-pointer hover:bg-rose-100"
+                        onClick={() => window.open(`http://localhost:7070/uploads/prescriptions/${appointment.prescriptionFile}`, "_blank")}
+                      >
+                        <FileText size={12} /> Prescription
+                      </Tag>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

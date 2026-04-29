@@ -11,6 +11,7 @@ import { createDoctor } from "./doctor/doctor.controller";
 import DoctorRouter from "./doctor/doctor.route";
 import DoctorAvailabilityRouter from "./doctoravailability/doctoravailability.route";
 import AppointmentRouter from "./appointment/appointment.route";
+import path from "path";
 
 dotenv.config();
 
@@ -20,6 +21,8 @@ mongoose.connect(process.env.DB_URL as string)
     .catch(() => console.log("Database failed to connect...."))
 
 const app = express();
+
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 
 app.use(express.urlencoded({ extended: true }));
