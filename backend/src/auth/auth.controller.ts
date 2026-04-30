@@ -14,10 +14,10 @@ export const login = async (req: Request, res: Response) => {
 
 
     res.cookie("AuthToken", result.token, {
-      httpOnly: true,        // not accessible via JS
-      secure: process.env.NODE_ENV === "production", // HTTPS only in prod
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms (matches JWT expiresIn)
+      httpOnly: true,
+      secure: true,        // MUST for HTTPS (Render)
+      sameSite: "none",    // 🔥 THIS IS THE FIX
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({
@@ -94,8 +94,8 @@ export const getSession = async (req: any, res: Response) => {
 export const logout = async (_req: Request, res: Response) => {
   res.clearCookie("AuthToken", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    secure: true,
+    sameSite: "none",
   });
 
   return res.status(200).json({ message: "Logged out successfully" });

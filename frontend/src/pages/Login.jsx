@@ -25,6 +25,7 @@ const Login = () => {
     setError("");
     try {
       const res = await API.post("/auth/login", { identifier: formData.email, password: formData.password });
+      console.log(res)
       const sessionData = await API.get("/auth/session");
       setSession(sessionData.data);
 

@@ -35,6 +35,7 @@ app.use(cors({
 app.use(cookieParser());
 
 console.log("DB URL", process.env.DB_URL)
+console.log("FRONTEND URL", process.env.FRONTEND_URL)
 
 app.use('/hospital', HospitalRouter);
 app.use("/patient", PatientRouter);
