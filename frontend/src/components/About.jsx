@@ -1,100 +1,69 @@
 import React from "react";
+import { Zap, ShieldCheck, HeartPulse } from "lucide-react";
 
 const About = () => {
   return (
-    <section
-      id="about"
-      className="relative px-8 md:px-16 py-24 bg-gradient-to-br from-white via-red-50 to-pink-100 overflow-hidden"
-    >
-      {/* Background Glow */}
-      <div className="absolute w-80 h-80 bg-red-300 rounded-full blur-3xl opacity-30 top-0 left-0"></div>
-      <div className="absolute w-96 h-96 bg-pink-300 rounded-full blur-3xl opacity-30 bottom-0 right-0"></div>
-
-      <div className="grid md:grid-cols-2 gap-16 items-center relative z-10">
-
+    <section id="about" className="relative px-8 md:px-16 py-32 bg-white overflow-hidden border-b border-slate-100">
+      <div className="container mx-auto grid md:grid-cols-2 gap-24 items-center relative z-10">
         {/* LEFT SIDE CONTENT */}
-        <div>
-          <p className="text-red-500 font-semibold tracking-wide mb-3">
-            About CareSync
-          </p>
+        <div className="space-y-12">
+          <div className="inline-flex items-center gap-3 px-4 py-2 bg-slate-900 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-xl shadow-slate-200">
+            <HeartPulse size={12} className="text-sky-400 animate-pulse" />
+            The Mission
+          </div>
 
-          <h2 className="text-3xl md:text-5xl font-bold leading-tight text-gray-900">
-            Built to Make
-            <br />
-            <span className="bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
-              Hospital Management Simple
-            </span>
+          <h2 className="text-5xl md:text-8xl font-black tracking-tight text-slate-900 leading-[0.9] uppercase">
+            Unified <br />
+            <span className="text-sky-500">Care</span>.
           </h2>
 
-          <p className="mt-6 text-gray-600 text-lg leading-relaxed max-w-xl">
-            CareSync is a smart hospital management platform designed for modern
-            healthcare. It helps hospitals manage patients, appointments,
-            billing, and medical records in one simple and secure system.
+          <p className="text-slate-500 text-lg font-bold leading-relaxed max-w-xl">
+            Founded on the principle of operational transparency, CureSync provides a modern orchestration layer for medical facilities that want to move faster without compromising patient safety.
           </p>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 mt-12">
-            <div>
-              <h3 className="text-4xl font-bold text-red-500">500+</h3>
-              <p className="text-gray-600 mt-2 text-sm">Hospitals Connected</p>
-            </div>
-
-            <div>
-              <h3 className="text-4xl font-bold text-red-500">1M+</h3>
-              <p className="text-gray-600 mt-2 text-sm">Patients Managed</p>
-            </div>
-
-            <div>
-              <h3 className="text-4xl font-bold text-red-500">24/7</h3>
-              <p className="text-gray-600 mt-2 text-sm">System Availability</p>
-            </div>
+          <div className="grid grid-cols-3 gap-3 pt-8">
+            {[
+              { val: "500+", lab: "Hospitals" },
+              { val: "1.2M", lab: "Records" },
+              { val: "99.9%", lab: "Uptime" }
+            ].map((stat, i) => (
+              <div key={i} className="bg-white/40 backdrop-blur-md p-8 rounded-3xl border border-white/50 hover:bg-white hover:shadow-xl transition-all shadow-sm">
+                <h3 className="text-3xl font-black text-slate-900 leading-none tracking-tighter">{stat.val}</h3>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-3">{stat.lab}</p>
+              </div>
+            ))}
           </div>
-
-          <p className="mt-8 text-gray-500">
-            Trusted by doctors, clinics, and hospitals across India.
-          </p>
         </div>
 
-        {/* RIGHT SIDE DESIGN ELEMENT (instead of empty space) */}
-        <div className="relative flex items-center justify-center">
+        {/* RIGHT SIDE DESIGN ELEMENT */}
+        <div className="relative">
+          <div className="relative bg-white/40 backdrop-blur-md p-16 rounded-[3rem] border border-white/50 shadow-sm group overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-sky-500/10 -mr-16 -mt-16 rotate-45 group-hover:scale-150 transition-transform duration-700" />
 
-          {/* Main Glass Card */}
-          <div className="bg-white/70 backdrop-blur-xl p-12 rounded-3xl shadow-2xl w-full max-w-md text-center">
-
-            <h3 className="text-2xl font-semibold text-gray-900">
-              Modern Healthcare Platform
-            </h3>
-
-            <p className="text-gray-600 mt-4">
-              A fast, secure, and easy-to-use hospital management system
-              designed for modern hospitals and clinics.
-            </p>
-
-            {/* Decorative Stats Row */}
-            <div className="flex justify-center gap-10 mt-8">
-              <div>
-                <p className="text-red-500 text-2xl font-bold">99%</p>
-                <p className="text-xs text-gray-500">Uptime</p>
+            <div className="space-y-10 relative z-10">
+              <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center text-sky-400 shadow-xl">
+                <ShieldCheck size={32} />
               </div>
-
-              <div>
-                <p className="text-red-500 text-2xl font-bold">Fast</p>
-                <p className="text-xs text-gray-500">Performance</p>
-              </div>
-
-              <div>
-                <p className="text-red-500 text-2xl font-bold">Secure</p>
-                <p className="text-xs text-gray-500">System</p>
+              <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter leading-tight">Cloud-Native <br /> Compliance.</h3>
+              <p className="text-slate-500 text-sm font-medium leading-relaxed">
+                Our architecture is built on top of enterprise-grade security protocols, ensuring every clinical record is encrypted and accessible only to authorized personnel.
+              </p>
+              <div className="pt-4 flex flex-wrap gap-2">
+                {["HIPAA", "GDPR", "SOC2"].map(tag => (
+                  <span key={tag} className="px-4 py-2 bg-slate-100 border border-slate-200 rounded-full text-[9px] font-black uppercase tracking-widest text-sky-500 hover:bg-sky-500 hover:text-white transition-all cursor-default">{tag}</span>
+                ))}
               </div>
             </div>
-
           </div>
-
         </div>
-
       </div>
     </section>
   );
 };
 
 export default About;
+
+
+;
+
+

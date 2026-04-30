@@ -18,7 +18,7 @@ dotenv.config();
 
 mongoose.connect(process.env.DB_URL as string)
     .then(() => console.log("Database connected....."))
-    .catch(() => console.log("Database failed to connect...."))
+    .catch((err: any) => console.log("Database failed to connect....> \n", err))
 
 const app = express();
 
@@ -34,7 +34,7 @@ app.use(cors({
 
 app.use(cookieParser());
 
-
+console.log("DB URL", process.env.DB_URL)
 
 app.use('/hospital', HospitalRouter);
 app.use("/patient", PatientRouter);

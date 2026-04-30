@@ -110,3 +110,47 @@ export const getByID = async(req:Request , res:Response)=>{
       res.status(500).json({ message: "Server error", error: err });
     }
 }
+
+export const addReport = async (req: any, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { category } = req.body;
+    const fileName = req.file ? req.file.filename : undefined;
+
+    if (!fileName || !category) {
+      return res.status(400).json({ message: "File and category are required" });
+    }
+
+    const patient = await PatientModel.findById(id);
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+    patient.reports.push({
+      fileName,
+      category,
+      uploadDate: new Date()
+    } as any);
+
+    await patient.save();
+    res.json({ message: "Report added to vault", patient });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err });
+  }
+};
+
+export const removeReport = async (req: Request, res: Response) => {
+  try {
+    const { id, reportId } = req.params;
+    const patient = await PatientModel.findById(id);
+    if (!patient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+    patient.reports = (patient.reports as any).filter((r: any) => r._id?.toString() !== reportId);
+    await patient.save();
+    res.json({ message: "Report removed from vault", patient });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err });
+  }
+};

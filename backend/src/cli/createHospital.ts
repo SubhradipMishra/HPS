@@ -3,7 +3,7 @@ import { input } from "@inquirer/prompts";
 import chalk from "chalk";
 import HospitalModel from "../hospital/hospital.model";
 
-const MONGO_URI = "mongodb://127.0.0.1:27017/curesync";
+const MONGO_URI = "mongodb+srv://subhradip:subhradip%407781@cluster0.xcucocb.mongodb.net/curesync?retryWrites=true&w=majority";
 
 async function createHospitalCLI() {
   try {

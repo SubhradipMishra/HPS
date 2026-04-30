@@ -9,6 +9,7 @@ import {
   DeleteOutlined,
   MedicineBoxOutlined,
   CalendarOutlined,
+  ClockCircleOutlined,
 } from "@ant-design/icons";
 import AdminLayout from "../../components/AdminLayout";
 import Context from "../../util/context";
@@ -23,6 +24,13 @@ export default function AdminDoctors() {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
+
+  // Availability State
+  const [availDrawerVisible, setAvailDrawerVisible] = useState(false);
+  const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [availabilities, setAvailabilities] = useState([]);
+  const [availLoading, setAvailLoading] = useState(false);
+  const [availForm] = Form.useForm();
 
   useEffect(() => {
     if (session?.hospitalId) {
@@ -73,6 +81,53 @@ export default function AdminDoctors() {
       }
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const fetchAvailabilities = async (doctorId) => {
+    setAvailLoading(true);
+    try {
+      const { data } = await API.get(`/doctor-availability/${doctorId}/${session.hospitalId}`);
+      if (data && data.availabilities) {
+        setAvailabilities(data.availabilities);
+      }
+    } catch (error) {
+      message.error("Failed to load availabilities");
+    } finally {
+      setAvailLoading(false);
+    }
+  };
+
+  const handleManageAvail = (doctor) => {
+    setSelectedDoctor(doctor);
+    setAvailDrawerVisible(true);
+    fetchAvailabilities(doctor._id);
+  };
+
+  const onAvailFinish = async (values) => {
+    try {
+      const payload = {
+        ...values,
+        doctorId: selectedDoctor._id,
+        hospitalId: session.hospitalId,
+        departmentId: selectedDoctor.departmentId?._id || selectedDoctor.departmentId,
+      };
+      await API.post("/doctor-availability/create", payload);
+      message.success("Availability added successfully");
+      availForm.resetFields();
+      fetchAvailabilities(selectedDoctor._id);
+    } catch (error) {
+      message.error(error.response?.data?.message || "Failed to add availability");
+    }
+  };
+
+  const deleteAvail = async (id) => {
+    try {
+      await API.delete(`/doctor-availability/${id}`);
+      message.success("Availability deleted");
+      fetchAvailabilities(selectedDoctor._id);
+    } catch (error) {
+      message.error("Failed to delete availability");
     }
   };
 
@@ -145,6 +200,13 @@ export default function AdminDoctors() {
             title="View Appointments"
           >
             <CalendarOutlined />
+          </button>
+          <button
+            onClick={() => handleManageAvail(record)}
+            className="w-8 h-8 rounded-lg bg-gray-50 text-emerald-500 hover:bg-emerald-50 transition flex items-center justify-center"
+            title="Manage Availability"
+          >
+            <ClockCircleOutlined />
           </button>
           <button className="w-8 h-8 rounded-lg bg-gray-50 text-blue-500 hover:bg-blue-50 transition flex items-center justify-center">
             <EditOutlined />
@@ -298,6 +360,100 @@ export default function AdminDoctors() {
             </div>
           </Form>
         </Drawer>
+
+        {/* ── Manage Availability Drawer ── */}
+        <Drawer
+          title={<span className="text-gray-800 font-bold">Manage Availability - {selectedDoctor?.name}</span>}
+          placement="right"
+          onClose={() => { setAvailDrawerVisible(false); setSelectedDoctor(null); }}
+          open={availDrawerVisible}
+          width={500}
+          destroyOnClose
+          styles={{ header: { borderBottom: "1px solid #fce7f3" } }}
+        >
+          <div className="space-y-6">
+            <div className="bg-pink-50 p-4 rounded-xl border border-pink-100">
+              <h4 className="text-sm font-bold text-pink-700 mb-3 flex items-center gap-2">
+                <PlusOutlined /> Add Availability
+              </h4>
+              <Form form={availForm} layout="vertical" onFinish={onAvailFinish} size="small">
+                <div className="grid grid-cols-2 gap-3">
+                  <Form.Item name="dayOfWeek" label="Day" rules={[{ required: true }]}>
+                    <Select placeholder="Select Day">
+                      {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => (
+                        <Select.Option key={day} value={day}>{day}</Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                  <Form.Item name="slotDuration" label="Duration (Min)" rules={[{ required: true }]}>
+                    <Select placeholder="Min">
+                      {[15, 20, 30, 45, 60].map(m => (
+                        <Select.Option key={m} value={m}>{m} mins</Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <Form.Item name="startTime" label="Start (e.g. 10:00)" rules={[{ required: true }]}>
+                    <Input placeholder="10:00" />
+                  </Form.Item>
+                  <Form.Item name="endTime" label="End (e.g. 13:00)" rules={[{ required: true }]}>
+                    <Input placeholder="13:00" />
+                  </Form.Item>
+
+                </div>
+                <Button 
+                  type="primary" 
+                  htmlType="submit" 
+                  block 
+                  className="bg-pink-600 border-none rounded-lg mt-2 h-9 font-semibold"
+                >
+                  Add Slot Range
+                </Button>
+              </Form>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                <CalendarOutlined /> Existing Availabilities
+              </h4>
+              <div className="space-y-3">
+                {availLoading ? (
+                  <div className="text-center py-4 text-gray-400">Loading...</div>
+                ) : availabilities.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                    <CalendarOutlined style={{ fontSize: 24, marginBottom: 8, display: "block" }} />
+                    No availability set
+                  </div>
+                ) : (
+                  availabilities.map(a => (
+                    <div key={a._id} className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-xl hover:border-pink-200 transition group shadow-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-pink-50 text-pink-600 flex items-center justify-center font-bold text-xs">
+                          {a.dayOfWeek.substring(0, 3).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-bold text-gray-800 text-sm">{a.dayOfWeek}</div>
+                          <div className="text-xs text-gray-500">
+                            {a.startTime} - {a.endTime} • {a.slotDuration} min slots
+                          </div>
+                        </div>
+                      </div>
+                      <Button 
+                        type="text" 
+                        danger 
+                        icon={<DeleteOutlined />} 
+                        onClick={() => deleteAvail(a._id)}
+                        className="opacity-0 group-hover:opacity-100 transition"
+                      />
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </Drawer>
+
       </div>
     </AdminLayout>
   );

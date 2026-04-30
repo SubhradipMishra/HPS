@@ -1,139 +1,134 @@
 import React from "react";
+import { Link } from "react-router-dom";
+import { HeartPulse, Mail, Phone, MapPin } from "lucide-react";
+
+const GithubIcon = (props) => (
+  <svg width={props.size} height={props.size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={props.className}>
+    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
+    <path d="M9 18c-4.51 2-5-2-7-2" />
+  </svg>
+);
+
+const TwitterIcon = (props) => (
+  <svg width={props.size} height={props.size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={props.className}>
+    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
+  </svg>
+);
+
+const LinkedinIcon = (props) => (
+  <svg width={props.size} height={props.size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={props.className}>
+    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+    <rect width="4" height="12" x="2" y="9" />
+    <circle cx="4" cy="4" r="2" />
+  </svg>
+);
 
 const Footer = () => {
+  const socials = [
+    { Icon: TwitterIcon, label: "Twitter" },
+    { Icon: GithubIcon, label: "Github" },
+    { Icon: LinkedinIcon, label: "Linkedin" }
+  ];
+
   return (
-    <footer className="relative bg-gradient-to-b from-white to-red-50 px-8 md:px-16 py-20 border-t border-red-100 overflow-hidden">
+    <footer className="relative bg-slate-900 text-white overflow-hidden pt-24 pb-12 border-t border-white/5">
+      <div className="container mx-auto px-6 md:px-12 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-24">
 
-      {/* Soft Glow Background */}
-      <div className="absolute w-80 h-80 bg-red-200 rounded-full blur-3xl opacity-30 top-0 left-0"></div>
-      <div className="absolute w-80 h-80 bg-pink-200 rounded-full blur-3xl opacity-30 bottom-0 right-0"></div>
-
-      <div className="relative z-10 max-w-6xl mx-auto grid md:grid-cols-4 gap-12">
-
-        {/* Logo + About */}
-        <div>
-          <h3 className="text-2xl font-bold bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
-            CareSync
-          </h3>
-
-          <p className="text-gray-600 mt-4 leading-relaxed">
-            A modern hospital management system that helps hospitals manage
-            patients, appointments, and billing in one powerful platform.
-          </p>
-
-          {/* Social Icons (Pure SVG) */}
-          <div className="flex gap-4 mt-6">
-
-            {/* Facebook */}
-            <div className="w-11 h-11 flex items-center justify-center rounded-full bg-white shadow-md hover:shadow-xl hover:-translate-y-1 transition cursor-pointer">
-              <svg
-                className="w-5 h-5 text-red-500"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M22 12.07C22 6.48 17.52 2 12 2S2 6.48 2 12.07c0 5.02 3.66 9.18 8.44 9.93v-7.03H7.9v-2.9h2.54V9.85c0-2.5 1.48-3.88 3.75-3.88 1.08 0 2.21.2 2.21.2v2.44h-1.25c-1.23 0-1.61.77-1.61 1.56v1.88h2.74l-.44 2.9h-2.3V22c4.78-.75 8.44-4.91 8.44-9.93z" />
-              </svg>
+          {/* Brand Identity */}
+          <div className="space-y-10">
+            <Link to="/" className="flex items-center gap-3 group">
+              <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-105 border border-white/10 shadow-lg">
+                <HeartPulse size={24} className="text-sky-400" />
+              </div>
+              <h1 className="text-2xl font-black tracking-tighter text-white uppercase">
+                Cure<span className="text-sky-500">Sync</span>
+              </h1>
+            </Link>
+            <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] leading-relaxed max-w-xs">
+              Autonomous Clinical Orchestration for high-throughput healthcare environments.
+            </p>
+            <div className="flex gap-2">
+              {socials.map((social, idx) => (
+                <div key={idx} className="w-10 h-10 bg-white/5 border border-white/5 rounded-xl flex items-center justify-center hover:bg-sky-500 hover:border-sky-500 transition-all cursor-pointer group">
+                  <social.Icon size={16} className="text-slate-500 group-hover:text-white transition-colors" />
+                </div>
+              ))}
             </div>
+          </div>
 
-            {/* Twitter */}
-            <div className="w-11 h-11 flex items-center justify-center rounded-full bg-white shadow-md hover:shadow-xl hover:-translate-y-1 transition cursor-pointer">
-              <svg
-                className="w-5 h-5 text-red-500"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M22 5.8c-.8.4-1.6.6-2.5.8.9-.6 1.6-1.4 1.9-2.4-.9.5-1.9.9-3 1.1A4.1 4.1 0 0015.5 4c-2.3 0-4.1 1.9-4.1 4.1 0 .3 0 .7.1 1C7.7 8.9 4.6 7.2 2.5 4.6c-.4.7-.6 1.4-.6 2.2 0 1.5.8 2.9 2 3.7-.7 0-1.4-.2-2-.5v.1c0 2.1 1.5 3.9 3.5 4.3-.4.1-.8.2-1.3.2-.3 0-.6 0-.9-.1.6 1.9 2.4 3.3 4.5 3.3A8.3 8.3 0 012 19.5 11.7 11.7 0 008.3 21c7.5 0 11.6-6.3 11.6-11.7v-.5c.8-.6 1.5-1.4 2.1-2.3z" />
-              </svg>
+          {/* Solution Links */}
+          <div>
+            <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-sky-500 mb-10">Infrastructure</h4>
+            <ul className="space-y-4">
+              {[
+                { name: "Doctor Workspace", path: "/login" },
+                { name: "Patient Vault", path: "/patient/dashboard" },
+                { name: "Admin Panel", path: "/login" },
+                { name: "Live Scheduling", path: "/solutions" }
+              ].map(item => (
+                <li key={item.name}>
+                  <Link to={item.path} className="text-[10px] font-black text-slate-400 hover:text-white transition-colors uppercase tracking-widest">{item.name}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Company Links */}
+          <div>
+            <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-sky-500 mb-10">Network</h4>
+            <ul className="space-y-4">
+              {[
+                { name: "Developer API", path: "/architecture" },
+                { name: "Hospital Nodes", path: "/architecture" },
+                { name: "Compliance Lab", path: "/privacy" },
+                { name: "Security Trust", path: "/privacy" }
+              ].map(item => (
+                <li key={item.name}>
+                  <Link to={item.path} className="text-[10px] font-black text-slate-400 hover:text-white transition-colors uppercase tracking-widest">{item.name}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contact Details */}
+          <div>
+            <h4 className="text-[9px] font-black uppercase tracking-[0.3em] text-sky-500 mb-10">Terminal</h4>
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                <Mail size={14} className="text-slate-600 mt-1" />
+                <div>
+                  <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Direct Stream</p>
+                  <p className="text-[10px] font-black text-slate-200 uppercase tracking-widest">nexus@caresync.cloud</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <Phone size={14} className="text-slate-600 mt-1" />
+                <div>
+                  <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Emergency Uplink</p>
+                  <p className="text-[10px] font-black text-slate-200 uppercase tracking-widest">+91 800 293 847</p>
+                </div>
+              </div>
             </div>
-
-            {/* LinkedIn */}
-            <div className="w-11 h-11 flex items-center justify-center rounded-full bg-white shadow-md hover:shadow-xl hover:-translate-y-1 transition cursor-pointer">
-              <svg
-                className="w-5 h-5 text-red-500"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M4.98 3.5C4.98 4.9 3.86 6 2.49 6S0 4.9 0 3.5 1.12 1 2.49 1 4.98 2.1 4.98 3.5zM.5 8h4V24h-4V8zm7.5 0h3.8v2.2h.1c.5-1 1.9-2.2 3.9-2.2 4.2 0 5 2.8 5 6.3V24h-4v-7.5c0-1.8 0-4.1-2.5-4.1s-2.9 2-2.9 4V24h-4V8z" />
-              </svg>
-            </div>
-
-            {/* Email */}
-            <div className="w-11 h-11 flex items-center justify-center rounded-full bg-white shadow-md hover:shadow-xl hover:-translate-y-1 transition cursor-pointer">
-              <svg
-                className="w-5 h-5 text-red-500"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path d="M4 4h16v16H4z" />
-                <path d="M22 6l-10 7L2 6" />
-              </svg>
-            </div>
-
           </div>
         </div>
 
-        {/* Product Links */}
-        <div>
-          <h4 className="font-semibold text-gray-900 mb-5">Product</h4>
-
-          <ul className="space-y-3 text-gray-600">
-            {["Features", "How It Works", "Dashboard", "Pricing"].map(
-              (item, index) => (
-                <li
-                  key={index}
-                  className="relative w-fit cursor-pointer hover:text-red-500 transition"
-                >
-                  {item}
-                  <span className="absolute left-0 bottom-0 w-0 h-[2px] bg-red-500 transition-all duration-300 hover:w-full"></span>
-                </li>
-              )
-            )}
-          </ul>
-        </div>
-
-        {/* Company Links */}
-        <div>
-          <h4 className="font-semibold text-gray-900 mb-5">Company</h4>
-
-          <ul className="space-y-3 text-gray-600">
-            {["About", "Contact", "Careers", "Support"].map((item, index) => (
-              <li
-                key={index}
-                className="relative w-fit cursor-pointer hover:text-red-500 transition"
-              >
-                {item}
-                <span className="absolute left-0 bottom-0 w-0 h-[2px] bg-red-500 transition-all duration-300 hover:w-full"></span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Contact */}
-        <div>
-          <h4 className="font-semibold text-gray-900 mb-5">Contact</h4>
-
-          <p className="text-gray-600 hover:text-red-500 transition cursor-pointer">
-            support@caresync.com
+        {/* Footer Bottom */}
+        <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
+          <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em]">
+            © 2026 CureSync Architecture. Built for Performance.
           </p>
-
-          <p className="text-gray-600 mt-3 hover:text-red-500 transition cursor-pointer">
-            +91 98765 43210
-          </p>
-
-          <p className="text-gray-600 mt-3">New Delhi, India</p>
+          <div className="flex items-center gap-8 text-[9px] font-black text-slate-600 uppercase tracking-widest">
+            <Link to="/privacy" className="hover:text-sky-500 transition">Security</Link>
+            <Link to="/terms" className="hover:text-sky-500 transition">Terms</Link>
+            <Link to="/inquiries" className="hover:text-sky-500 transition">Status</Link>
+          </div>
         </div>
-
       </div>
-
-      {/* Bottom Line */}
-      <div className="border-t border-red-100 mt-14 pt-6 text-center text-gray-500">
-        © 2026 CareSync. All rights reserved.
-      </div>
-
     </footer>
   );
 };
 
 export default Footer;
+
+

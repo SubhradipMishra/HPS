@@ -1,95 +1,81 @@
-
 import React, { useState } from "react";
+import { Plus, Minus, HelpCircle } from "lucide-react";
 
 const faqs = [
   {
-    question: "What is CareSync?",
-    answer:
-      "CareSync is a modern hospital management system that helps hospitals manage patients, appointments, doctors, and billing in one easy-to-use platform.",
+    question: "What is CureSync Architecture?",
+    answer: "CureSync is a cloud-native orchestration platform designed to unify hospital operations, patient records, and scheduling into a single, secure digital ecosystem."
   },
   {
-    question: "Is CareSync suitable for small clinics?",
-    answer:
-      "Yes. CareSync is designed for both small clinics and large hospitals. It is simple to use and does not require technical knowledge.",
+    question: "How does the Personal Medical Vault work?",
+    answer: "The vault uses enterprise-grade encryption to store patient records. Only the patient and authorized medical personnel can access or link these records during consultations."
   },
   {
-    question: "Can I manage patient records digitally?",
-    answer:
-      "Yes. You can store prescriptions, reports, medical history, and patient information securely in one place.",
+    question: "Can it integrate with existing hospital hardware?",
+    answer: "Yes. Our open API architecture allows for seamless integration with most modern lab equipment and imaging systems for automated report synchronization."
   },
   {
-    question: "Does CareSync support appointment booking?",
-    answer:
-      "Yes. You can easily book, update, and manage appointments using the smart appointment system.",
-  },
-  {
-    question: "Is the platform secure?",
-    answer:
-      "Yes. CareSync stores all data securely and ensures patient information is protected at all times.",
-  },
+    question: "Is the platform HIPAA compliant?",
+    answer: "Absolutely. Security is our priority. We maintain full compliance with international healthcare data standards including HIPAA and GDPR."
+  }
 ];
 
 const FAQSection = () => {
   const [activeIndex, setActiveIndex] = useState(null);
 
-  const toggleFAQ = (index) => {
-    setActiveIndex(activeIndex === index ? null : index);
-  };
-
   return (
-    <section className="px-8 md:px-16 py-28 bg-gradient-to-b from-white to-red-50">
+    <section id="faq" className="px-8 md:px-16 py-32 bg-slate-50 relative overflow-hidden border-b border-slate-100">
+      <div className="container mx-auto relative z-10">
 
-      {/* Heading */}
-      <div className="text-center max-w-3xl mx-auto">
-        <p className="text-red-500 font-semibold tracking-wide mb-3">
-          FAQ
-        </p>
+        {/* Heading */}
+        <div className="text-center max-w-3xl mx-auto mb-24">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-sky-600 mb-4">Support Center</p>
+          <h2 className="text-5xl md:text-8xl font-black tracking-tight text-slate-900 leading-[0.9] uppercase">
+            Common <br />
+            <span className="text-sky-500">Inquiries</span>.
+          </h2>
+        </div>
 
-        <h2 className="text-3xl md:text-5xl font-bold leading-tight text-gray-900">
-          Frequently Asked
-          <br />
-          <span className="bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
-            Questions
-          </span>
-        </h2>
+        {/* FAQ Items */}
+        <div className="max-w-4xl mx-auto space-y-4">
+          {faqs.map((faq, index) => {
+            const isOpen = activeIndex === index;
+            return (
+              <div key={index} className={`bg-white/40 backdrop-blur-md border transition-all duration-300 rounded-[2rem] overflow-hidden ${isOpen ? "border-sky-500 z-10 shadow-2xl" : "border-white/50 shadow-sm"}`}>
+                <button
+                  onClick={() => setActiveIndex(isOpen ? null : index)}
+                  className="w-full flex justify-between items-center px-10 py-10 text-left group"
+                >
+                  <div className="flex items-center gap-6">
+                    <p className={`text-xs font-black transition-colors ${isOpen ? "text-sky-500" : "text-slate-300"}`}>0{index + 1}.</p>
+                    <h3 className={`text-sm font-black uppercase tracking-tight transition-colors ${isOpen ? "text-slate-900" : "text-slate-600 group-hover:text-slate-900"}`}>
+                      {faq.question}
+                    </h3>
+                  </div>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isOpen ? "bg-slate-900 text-white rotate-180" : "bg-slate-50 text-slate-400 group-hover:bg-slate-100"}`}>
+                    {isOpen ? <Minus size={14} /> : <Plus size={14} />}
+                  </div>
+                </button>
 
-        <p className="text-gray-600 mt-6 text-lg">
-          Everything you need to know about CareSync before getting started.
-        </p>
-      </div>
-
-      {/* FAQ Items */}
-      <div className="max-w-4xl mx-auto mt-16 space-y-6">
-
-        {faqs.map((faq, index) => (
-          <div
-            key={index}
-            className="bg-white p-6 md:p-8 rounded-2xl shadow-md border border-red-100"
-          >
-            <button
-              onClick={() => toggleFAQ(index)}
-              className="w-full flex justify-between items-center text-left"
-            >
-              <h3 className="text-lg font-semibold text-gray-900">
-                {faq.question}
-              </h3>
-
-              <span className="text-red-500 text-xl font-bold">
-                {activeIndex === index ? "-" : "+"}
-              </span>
-            </button>
-
-            {activeIndex === index && (
-              <p className="text-gray-600 mt-4 leading-relaxed">
-                {faq.answer}
-              </p>
-            )}
-          </div>
-        ))}
-
+                <div className={`overflow-hidden transition-all duration-500 ${isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"}`}>
+                  <div className="px-10 pb-10 pt-2 ml-12">
+                    <p className="text-slate-500 text-xs font-bold leading-relaxed border-l-2 border-sky-500 pl-8 max-w-2xl">
+                      {faq.answer}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </section>
   );
 };
 
 export default FAQSection;
+
+
+
+
+

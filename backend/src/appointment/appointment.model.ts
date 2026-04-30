@@ -55,9 +55,13 @@ const appointmentSchema = new Schema<IAppointment>(
             type: String,
             enum: ["Lab Report", "Prescription", "Other"],
         },
+        reportReview: {
+            type: String,
+        },
         review: {
             type: String,
         },
+
         rating: {
             type: Number,
             min: 1,

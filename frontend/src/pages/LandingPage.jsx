@@ -10,20 +10,24 @@ import Testimonials from "../components/Testimonials";
 import CTASection from "../components/CTASection";
 import FAQSection from "../components/FAQSection";
 import Pricing from "../components/Pricing";
+import ClientLogos from "../components/ClientLogos";
+import FeedbackForm from "../components/FeedbackForm";
 
 const LandingPage = () => {
   return (
     <div>
       <Navbar />
       <Hero />
+      <ClientLogos />
       <Features />
-      <HowItWorks/>
-    
+      <HowItWorks />
+      <DashboardPreview />
       <About />
-      <Testimonials/>
-      <Pricing/>
+      <Testimonials />
+      <Pricing />
       <FAQSection />
-      <CTASection/>
+      <FeedbackForm />
+      <CTASection />
       <Footer />
     </div>
   );

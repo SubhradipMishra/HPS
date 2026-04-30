@@ -1,98 +1,136 @@
-import React from "react";
+import React, { useRef } from "react";
+import { Carousel, Button as AntButton } from "antd";
+import { Quote, Star, ArrowLeft, ArrowRight } from "lucide-react";
 
 const testimonials = [
   {
     name: "Dr. Rahul Sharma",
-    role: "Cardiologist",
-    review:
-      "CareSync has completely changed how we manage patient records. Everything is faster and much easier to handle now.",
+    role: "Chief Cardiologist",
+    review: "CureSync has transformed our clinical operations. The patient record synchronization is flawless and the interface is incredibly intuitive.",
+    img: "https://i.pravatar.cc/100?u=dr1"
   },
   {
     name: "Dr. Priya Verma",
-    role: "Dental Specialist",
-    review:
-      "Appointment booking is now super smooth. Our staff saves a lot of time every single day.",
+    role: "Dental Director",
+    review: "The scheduling engine is a game changer. We've reduced patient wait times by 40% since implementing the orchestration layer.",
+    img: "https://i.pravatar.cc/100?u=dr2"
   },
   {
     name: "Dr. Amit Singh",
-    role: "General Physician",
-    review:
-      "The billing and patient management system works perfectly. It feels like a real enterprise software.",
+    role: "HOD Internal Medicine",
+    review: "Finally, a hospital management system that feels like modern software. Secure, fast, and extremely reliable for enterprise use.",
+    img: "https://i.pravatar.cc/100?u=dr3"
   },
   {
-    name: "Dr. Sneha Patel",
-    role: "Eye Specialist",
-    review:
-      "The dashboard is very clean and easy to use. Even new staff members learn it in just a few minutes.",
+    name: "Dr. Sneha Kapoor",
+    role: "Radiology Head",
+    review: "The AI-driven insights have significantly improved our diagnostic accuracy and reporting speed. Highly recommended for modern clinics.",
+    img: "https://i.pravatar.cc/100?u=dr4"
   },
   {
-    name: "Dr. Arjun Mehta",
-    role: "Orthopedic Doctor",
-    review:
-      "We replaced our old hospital software with CareSync and the difference is huge. Very modern and fast.",
-  },
-  {
-    name: "Dr. Neha Kapoor",
-    role: "Gynecologist",
-    review:
-      "Patient history tracking is amazing. Everything is organized in one place.",
-  },
+    name: "Dr. Vikram Malhotra",
+    role: "Orthopedic Surgeon",
+    review: "Managing surgical schedules and follow-ups has never been easier. The platform is truly built for high-throughput environments.",
+    img: "https://i.pravatar.cc/100?u=dr5"
+  }
 ];
 
 const Testimonials = () => {
+  const carouselRef = useRef();
+
   return (
-    <section className="px-8 md:px-16 py-28 bg-gradient-to-b from-white via-red-50 to-pink-100 overflow-hidden">
+    <section id="testimonials" className="relative px-8 md:px-16 py-32 bg-slate-50 overflow-hidden border-b border-slate-100">
+      <div className="container mx-auto relative z-10">
 
-      {/* Heading */}
-      <div className="text-center max-w-3xl mx-auto">
-        <p className="text-red-500 font-semibold tracking-wide mb-3">
-          Testimonials
-        </p>
+        <div className="flex flex-col md:flex-row justify-between items-end gap-10 mb-20">
+          <div className="max-w-3xl">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-sky-600 mb-4">Institutional Trust</p>
+            <h2 className="text-5xl md:text-8xl font-black tracking-tight text-slate-900 leading-[0.9] uppercase">
+              Trusted by <br />
+              <span className="text-sky-500">Visionaries</span>.
+            </h2>
+          </div>
 
-        <h2 className="text-3xl md:text-5xl font-bold leading-tight text-gray-900">
-          Doctors Trust
-          <br />
-          <span className="bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
-            CareSync Every Day
-          </span>
-        </h2>
+          <div className="flex gap-2 mb-4">
+            <AntButton
+              onClick={() => carouselRef.current.prev()}
+              className="w-14 h-14 rounded-2xl border border-slate-200 flex items-center justify-center hover:bg-slate-900 hover:text-white transition-all shadow-sm"
+              icon={<ArrowLeft size={20} />}
+            />
+            <AntButton
+              onClick={() => carouselRef.current.next()}
+              className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center hover:bg-sky-500 transition-all shadow-xl shadow-slate-200 border-none"
+              icon={<ArrowRight size={20} />}
+            />
+          </div>
+        </div>
 
-        <p className="text-gray-600 mt-6 text-lg">
-          Hospitals and clinics are already using CareSync to manage patients,
-          appointments, and billing.
-        </p>
-      </div>
+        <div className="relative">
+          <Carousel
+            ref={carouselRef}
+            autoplay
+            autoplaySpeed={5000}
+            infinite
+            slidesToShow={3}
+            responsive={[
+              { breakpoint: 1024, settings: { slidesToShow: 2 } },
+              { breakpoint: 640, settings: { slidesToShow: 1 } }
+            ]}
+            dots={false}
+            className="testimonial-carousel"
+          >
+            {testimonials.map((item, index) => (
+              <div key={index} className="px-3 pb-12">
+                <div className="bg-white/40 backdrop-blur-xl p-12 border border-white/50 transition-all duration-500 hover:bg-slate-900 group rounded-[3rem] shadow-sm hover:shadow-2xl h-full flex flex-col justify-between">
+                  <div>
+                    <div className="flex gap-1 mb-10">
+                      {[1, 2, 3, 4, 5].map(i => <Star key={i} size={10} className="text-sky-500 fill-sky-500" />)}
+                    </div>
 
-      {/* Scroll Section */}
-      <div className="mt-16 overflow-x-auto no-scrollbar">
-        <div className="flex gap-8 min-w-max">
+                    <div className="relative mb-12">
+                      <p className="text-lg font-bold leading-relaxed text-slate-900 group-hover:text-white transition-colors italic">
+                        "{item.review}"
+                      </p>
+                    </div>
+                  </div>
 
-          {testimonials.map((item, index) => (
-            <div
-              key={index}
-              className="w-72 h-72 bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-2 flex flex-col justify-between"
-            >
-              <p className="text-gray-700 leading-relaxed text-sm">
-                {item.review}
-              </p>
-
-              <div className="flex items-center gap-4 mt-6">
-                <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-pink-500 rounded-full"></div>
-
-                <div>
-                  <h4 className="font-semibold text-gray-900 text-sm">
-                    {item.name}
-                  </h4>
-                  <p className="text-xs text-gray-500">{item.role}</p>
+                  <div className="flex items-center gap-4 pt-10 border-t border-white/20 group-hover:border-white/10 transition-colors">
+                    <img src={item.img} className="w-12 h-12 rounded-xl border border-white/30 group-hover:border-white/20 transition-all" alt={item.name} />
+                    <div>
+                      <h4 className="font-black text-slate-900 group-hover:text-white text-xs leading-none mb-1 uppercase tracking-tighter transition-colors">{item.name}</h4>
+                      <p className="text-[10px] font-black text-slate-400 group-hover:text-slate-500 uppercase tracking-widest transition-colors">{item.role}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-
+            ))}
+          </Carousel>
         </div>
       </div>
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        .testimonial-carousel .slick-track {
+          display: flex !important;
+        }
+        .testimonial-carousel .slick-slide {
+          height: inherit !important;
+        }
+        .testimonial-carousel .slick-slide > div {
+          height: 100% !important;
+        }
+      `}} />
     </section>
   );
 };
 
 export default Testimonials;
+
+
+
+
+
+
+
+
+

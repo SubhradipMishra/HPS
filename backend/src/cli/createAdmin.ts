@@ -4,7 +4,7 @@ import chalk from "chalk";
 import { AdminModel } from "../admin/admin.model";
 import HospitalModel from "../hospital/hospital.model";
 
-const MONGO_URI = "mongodb://127.0.0.1:27017/curesync";
+const MONGO_URI = "mongodb+srv://subhradip:subhradip%407781@cluster0.xcucocb.mongodb.net/curesync?retryWrites=true&w=majority";
 
 async function createAdminCLI() {
   try {

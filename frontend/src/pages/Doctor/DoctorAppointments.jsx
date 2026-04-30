@@ -45,6 +45,7 @@ export default function DoctorAppointments() {
   const [completeModalVisible, setCompleteModalVisible] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [remarks, setRemarks] = useState("");
+  const [reportReview, setReportReview] = useState("");
   const [fileList, setFileList] = useState([]);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -73,9 +74,11 @@ export default function DoctorAppointments() {
       setActionLoading(true);
       const formData = new FormData();
       formData.append("remarks", remarks);
+      formData.append("reportReview", reportReview);
       if (fileList.length > 0) {
         formData.append("prescription", fileList[0]);
       }
+
 
       await API.patch(`/appointment/${selectedAppointment._id}/complete`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -84,8 +87,10 @@ export default function DoctorAppointments() {
       messageApi.success("Appointment marked as completed");
       setCompleteModalVisible(false);
       setRemarks("");
+      setReportReview("");
       setFileList([]);
       fetchAppointments();
+
     } catch (err) {
       messageApi.error(err?.response?.data?.message || "Failed to complete appointment");
     } finally {
@@ -131,6 +136,12 @@ export default function DoctorAppointments() {
     );
   }, [appointments, searchText]);
 
+  const isTimePassed = (date, slotTime) => {
+    if (!date || !slotTime) return false;
+    const appointmentDateTime = new Date(`${date}T${slotTime}`);
+    return new Date() >= appointmentDateTime;
+  };
+
   const columns = [
     {
       title: "Patient Details",
@@ -138,6 +149,7 @@ export default function DoctorAppointments() {
       render: (_, record) => {
         const name = record.patientId?.name || "Patient";
         return (
+
           <div className="flex items-center gap-3">
             <Avatar size={40} style={{ background: "linear-gradient(135deg,#ef4444,#ec4899)", fontWeight: 700 }}>
               {name.slice(0, 2).toUpperCase()}
@@ -204,17 +216,23 @@ export default function DoctorAppointments() {
       key: "actions",
       render: (_, record) => {
         if (record.status !== "booked") return <span className="text-xs text-slate-300">—</span>;
+        const passed = isTimePassed(record.date, record.slotTime);
         return (
+
           <div className="flex items-center gap-2">
-            <Button 
-              type="primary" 
-              size="small" 
-              icon={<CheckCircleOutlined />}
-              onClick={() => confirmAction("complete", record, record.patientId?.name)}
-              className="bg-pink-500 hover:bg-pink-600 border-none rounded-lg text-xs"
-            >
-              Complete
-            </Button>
+            <Tooltip title={!passed ? `Can only complete after ${record.slotTime}` : ""}>
+              <Button 
+                type="primary" 
+                size="small" 
+                icon={<CheckCircleOutlined />}
+                onClick={() => confirmAction("complete", record, record.patientId?.name)}
+                disabled={!passed}
+                className={`${passed ? "bg-pink-500 hover:bg-pink-600" : "bg-slate-200"} border-none rounded-lg text-xs`}
+              >
+                Complete
+              </Button>
+            </Tooltip>
+
             <Button 
               size="small" 
               danger
@@ -267,6 +285,20 @@ export default function DoctorAppointments() {
               className="rounded-2xl border-slate-200 focus:border-pink-400 focus:ring-pink-100"
             />
           </div>
+
+          {selectedAppointment?.patientReport && (
+            <div className="mt-6 space-y-2">
+              <label className="text-xs font-black text-blue-400 uppercase tracking-widest">Doctor's Review on Patient Report</label>
+              <TextArea
+                rows={3}
+                placeholder="E.g. The blood sugar levels are slightly elevated but manageable."
+                value={reportReview}
+                onChange={(e) => setReportReview(e.target.value)}
+                className="rounded-2xl border-slate-200 focus:border-blue-400 focus:ring-blue-100"
+              />
+            </div>
+          )}
+
 
           <div className="mt-6 space-y-2">
             <label className="text-xs font-black text-slate-400 uppercase tracking-widest block">Attachment (Prescription / Lab Report)</label>

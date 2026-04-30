@@ -14,23 +14,46 @@ export default function DoctorDocuments() {
   // Review Modal State
   const [reviewModalVisible, setReviewModalVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [editRemarks, setEditRemarks] = useState("");
+  const [editReportReview, setEditReportReview] = useState("");
+  const [updating, setUpdating] = useState(false);
+
+  const fetchDocuments = async () => {
+    if (!session?.id) return;
+    try {
+      setLoading(true);
+      const { data } = await API.get(`/appointment/doctor/${session.id}`);
+      setAppointments(data.appointments || []);
+    } catch {
+      message.error("Failed to load documents");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   useEffect(() => {
-    if (!session?.id) return;
-    const fetchDocuments = async () => {
-      try {
-        setLoading(true);
-        // Get all appointments for the doctor
-        const { data } = await API.get(`/appointment/doctor/${session.id}`);
-        setAppointments(data.appointments || []);
-      } catch {
-        message.error("Failed to load documents");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchDocuments();
   }, [session?.id]);
+
+  const handleUpdateReview = async () => {
+    if (!selectedRecord) return;
+    try {
+      setUpdating(true);
+      await API.patch(`/appointment/${selectedRecord._id}/update`, {
+        remarks: editRemarks,
+        reportReview: editReportReview,
+      });
+      message.success("Review updated successfully");
+      await fetchDocuments();
+      setReviewModalVisible(false);
+    } catch (err) {
+      message.error(err?.response?.data?.message || "Failed to update review");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
 
   const documents = useMemo(() => {
     return appointments.filter(a => a.patientReport).map(a => ({
@@ -43,7 +66,9 @@ export default function DoctorDocuments() {
       patientReview: a.review,
       patientRating: a.rating,
       remarks: a.remarks,
+      reportReview: a.reportReview,
     }));
+
   }, [appointments]);
 
   const filtered = useMemo(() => {
@@ -103,8 +128,11 @@ export default function DoctorDocuments() {
             size="small" 
             onClick={() => {
               setSelectedRecord(record);
+              setEditRemarks(record.remarks || "");
+              setEditReportReview(record.reportReview || "");
               setReviewModalVisible(true);
             }}
+
             className="rounded-lg text-[11px] font-bold border-slate-200 text-slate-600 hover:text-pink-600 hover:border-pink-200"
           >
             Review
@@ -130,10 +158,20 @@ export default function DoctorDocuments() {
         open={reviewModalVisible}
         onCancel={() => setReviewModalVisible(false)}
         footer={[
-          <Button key="close" type="primary" onClick={() => setReviewModalVisible(false)} className="bg-slate-900 border-none">
+          <Button key="close" onClick={() => setReviewModalVisible(false)}>
             Close
+          </Button>,
+          <Button 
+            key="update" 
+            type="primary" 
+            loading={updating}
+            onClick={handleUpdateReview} 
+            className="bg-pink-600 border-none h-10 px-6 rounded-xl font-bold"
+          >
+            Update Review
           </Button>
         ]}
+
         width={600}
       >
         {selectedRecord && (
@@ -152,10 +190,26 @@ export default function DoctorDocuments() {
 
             <div>
                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-2">Doctor's Remarks</p>
-               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-sm text-slate-700 leading-relaxed italic">
-                 "{selectedRecord.remarks || "No clinical remarks provided for this session."}"
-               </div>
+               <Input.TextArea
+                 rows={3}
+                 value={editRemarks}
+                 onChange={(e) => setEditRemarks(e.target.value)}
+                 placeholder="Enter clinical remarks for this session..."
+                 className="rounded-2xl border-slate-200 focus:border-pink-400 focus:ring-pink-100 text-sm italic"
+               />
             </div>
+
+            <div>
+               <p className="text-[10px] text-blue-400 font-bold uppercase tracking-widest mb-2">Review on Patient Report</p>
+               <Input.TextArea
+                 rows={3}
+                 value={editReportReview}
+                 onChange={(e) => setEditReportReview(e.target.value)}
+                 placeholder="Analyze the patient's uploaded report here..."
+                 className="rounded-2xl border-slate-200 focus:border-blue-400 focus:ring-blue-100 text-sm"
+               />
+            </div>
+
 
             {selectedRecord.patientReview && (
               <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100">

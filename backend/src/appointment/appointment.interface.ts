@@ -14,8 +14,10 @@ interface IAppointment extends Document {
     prescriptionFile?: string;
     patientReport?: string;
     patientReportCategory?: "Lab Report" | "Prescription" | "Other";
+    reportReview?: string;
     review?: string;
     rating?: number;
+
 
     createdAt: Date;
     updatedAt: Date;

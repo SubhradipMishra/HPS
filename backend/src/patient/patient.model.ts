@@ -12,7 +12,15 @@ const PatientSchema: Schema<IPatient> = new Schema(
     gender: { type: String, enum: ["male", "female", "other"] },
     createdBy: { type: String, enum: ["self", "receptionist"], required: true },
     isActive: { type: Boolean, default: true },
+    reports: [
+      {
+        fileName: { type: String, required: true },
+        category: { type: String, required: true },
+        uploadDate: { type: Date, default: Date.now },
+      },
+    ],
   },
+
   { timestamps: { createdAt: true, updatedAt: true } }
 );
 

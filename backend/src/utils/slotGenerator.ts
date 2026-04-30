@@ -5,11 +5,16 @@ export const generateSlots = (
 ) => {
     const slots: string[] = [];
 
-    const [startHour, startMin] = startTime.split(":").map(Number);
-    const [endHour, endMin] = endTime.split(":").map(Number);
+    const parseTime = (timeStr: string) => {
+        const parts = timeStr.split(":");
+        const hour = Number(parts[0]);
+        const min = parts[1] ? Number(parts[1]) : 0;
+        return hour * 60 + min;
+    };
 
-    let start = startHour * 60 + startMin;
-    const end = endHour * 60 + endMin;
+    let start = parseTime(startTime);
+    const end = parseTime(endTime);
+
 
     while (start + slotDuration <= end) {
         const hour = Math.floor(start / 60);

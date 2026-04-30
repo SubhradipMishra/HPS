@@ -19,10 +19,9 @@ export const getAvailableSlots = async (req: Request, res: Response) => {
             });
         }
 
-        // Convert date → day name
-        const dayOfWeek = new Date(date as string).toLocaleDateString("en-US", {
-            weekday: "long",
-        });
+        // Convert date (YYYY-MM-DD) → day name
+        const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const dayOfWeek = days[new Date(date as string).getUTCDay()];
 
         // Find doctor availability
         const availability = await DoctorAvailabilityModel.findOne({
@@ -105,10 +104,9 @@ export const bookAppointment = async (req: Request, res: Response) => {
             });
         }
 
-        // Convert date → day name
-        const dayOfWeek = new Date(date).toLocaleDateString("en-US", {
-            weekday: "long",
-        });
+        // Convert date (YYYY-MM-DD) → day name
+        const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+        const dayOfWeek = days[new Date(date).getUTCDay()];
 
         // Check doctor availability
         const availability = await DoctorAvailabilityModel.findOne({
@@ -192,7 +190,8 @@ export const getPatientAppointments = async (req: Request, res: Response) => {
             .populate("doctorId", "name specialization")
             .populate("hospitalId", "name city")
             .populate("departmentId", "name")
-            .sort({ date: -1 });
+            .sort({ date: 1, slotTime: 1 });
+
 
         return res.status(200).json({
             success: true,
@@ -304,15 +303,25 @@ export const getAllAppointments = async (req: Request, res: Response) => {
 export const completeAppointment = async (req: any, res: Response) => {
     try {
         const { appointmentId } = req.params;
-        const { remarks } = req.body;
-        const prescriptionFile = req.file ? req.file.filename : undefined;
-
         const appointment = await AppointmentModel.findById(appointmentId);
+        const { remarks, reportReview } = req.body;
+        const prescriptionFile = req.file ? req.file.filename : undefined;
 
         if (!appointment) {
             return res.status(404).json({
                 success: false,
                 message: "Appointment not found",
+            });
+        }
+
+        // 🕒 Time Check: Cannot complete before the scheduled appointment time
+        const appointmentDateTime = new Date(`${appointment.date}T${appointment.slotTime}`);
+        const now = new Date();
+        
+        if (now < appointmentDateTime) {
+            return res.status(400).json({
+                success: false,
+                message: `This appointment is scheduled for ${appointment.date} at ${appointment.slotTime}. You can only mark it as completed after this time.`,
             });
         }
 
@@ -332,14 +341,12 @@ export const completeAppointment = async (req: any, res: Response) => {
         }
 
         appointment.status = "completed";
-        if (remarks) {
-            appointment.remarks = remarks;
-        }
-        if (prescriptionFile) {
-            appointment.prescriptionFile = prescriptionFile;
-        }
+        if (remarks) appointment.remarks = remarks;
+        if (reportReview) appointment.reportReview = reportReview;
+        if (prescriptionFile) appointment.prescriptionFile = prescriptionFile;
         
         await appointment.save();
+
 
         return res.status(200).json({
             success: true,
@@ -470,7 +477,8 @@ export const getDoctorAppointments = async (req: Request, res: Response) => {
             .populate("doctorId", "name specialization")
             .populate("hospitalId", "name city")
             .populate("departmentId", "name")
-            .sort({ date: -1, slotTime: -1 });
+            .sort({ date: 1, slotTime: 1 });
+
 
         return res.status(200).json({
             success: true,
@@ -484,3 +492,75 @@ export const getDoctorAppointments = async (req: Request, res: Response) => {
         });
     }
 };
+
+/* =========================================================
+   UPDATE APPOINTMENT (Doctor)
+   ========================================================= */
+
+export const updateAppointment = async (req: any, res: Response) => {
+    try {
+        const { appointmentId } = req.params;
+        const { remarks, reportReview } = req.body;
+
+        const appointment = await AppointmentModel.findById(appointmentId);
+
+        if (!appointment) {
+            return res.status(404).json({
+                success: false,
+                message: "Appointment not found",
+            });
+        }
+
+        // 🔒 Security Check: Only the assigned Doctor can update
+        if (req.user.id !== appointment.doctorId.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied. You can only update your own appointments.",
+            });
+        }
+
+        if (remarks !== undefined) appointment.remarks = remarks;
+        if (reportReview !== undefined) appointment.reportReview = reportReview;
+
+        await appointment.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Appointment updated successfully",
+            appointment,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server error",
+        });
+    }
+};
+
+export const linkReportFromVault = async (req: any, res: Response) => {
+    try {
+        const { appointmentId } = req.params;
+        const { reportFileName, category } = req.body;
+
+        const appointment = await AppointmentModel.findById(appointmentId);
+        if (!appointment) {
+            return res.status(404).json({ success: false, message: "Appointment not found" });
+        }
+
+        appointment.patientReport = reportFileName;
+        appointment.patientReportCategory = category;
+        await appointment.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Report linked from vault successfully",
+            appointment,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server error",
+        });
+    }
+};
+

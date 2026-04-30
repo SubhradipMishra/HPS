@@ -1,113 +1,75 @@
 import React from "react";
-import { UserOutlined, CalendarOutlined, FileTextOutlined, HeartOutlined } from "@ant-design/icons";
+import {
+  Users,
+  Calendar,
+  CreditCard,
+  Zap,
+  Activity,
+  Lock,
+  Globe
+} from "lucide-react";
 
 const Features = () => {
+  const featureList = [
+    { title: "Identity Vault", desc: "Digital patient records.", icon: Users },
+    { title: "Live Sync", desc: "Real-time scheduling.", icon: Calendar },
+    { title: "Encryption", desc: "256-bit AES protection.", icon: Lock },
+    { title: "Analytics", desc: "Revenue tracking.", icon: Activity },
+    { title: "Global API", desc: "Third-party ready.", icon: Globe },
+    { title: "Smart Billing", desc: "Automated invoices.", icon: CreditCard }
+  ];
+
   return (
-    <section
-      id="features"
-      className="relative py-24 px-6 md:px-16 bg-gradient-to-br from-white via-red-50 to-pink-100 overflow-hidden"
-    >
+    <section id="features" className="relative py-32 px-6 md:px-16 bg-slate-50 overflow-hidden border-b border-slate-100">
+      <div className="container mx-auto">
+        <div className="grid lg:grid-cols-12 gap-20 items-start">
 
-      {/* Background Glow */}
-      <div className="absolute w-80 h-80 bg-red-300 rounded-full blur-3xl opacity-30 top-10 left-10"></div>
-      <div className="absolute w-96 h-96 bg-pink-300 rounded-full blur-3xl opacity-30 bottom-10 right-10"></div>
+          {/* CONTENT LEFT */}
+          <div className="lg:col-span-5 space-y-10">
+            <div className="inline-flex items-center gap-3 px-4 py-2 bg-white rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 shadow-sm border border-slate-100">
+              <Zap size={12} className="text-sky-500 fill-sky-500" />
+              Platform Stack
+            </div>
 
-      <div className="grid md:grid-cols-2 gap-16 items-center relative z-10">
+            <h2 className="text-5xl md:text-7xl font-black tracking-tight text-slate-900 leading-[1.0] uppercase">
+              Modular <br />
+              <span className="text-sky-500">Architecture</span>.
+            </h2>
 
-        {/* LEFT SIDE CONTENT */}
-        <div>
-          <p className="text-red-500 font-semibold tracking-wide mb-3">
-            Powerful Features
-          </p>
+            <p className="text-slate-500 text-lg font-bold leading-relaxed max-w-xl">
+              A high-precision orchestration layer designed to simplify clinical workflows through modular technology blocks.
+            </p>
 
-          <h2 className="text-3xl md:text-5xl font-bold leading-tight text-gray-900">
-            Everything You Need in a
-            <br />
-            <span className="bg-gradient-to-r from-red-500 to-pink-500 bg-clip-text text-transparent">
-              Smart Hospital System
-            </span>
-          </h2>
-
-          <p className="text-gray-600 mt-6 text-lg max-w-xl leading-relaxed">
-            CareSync provides a complete hospital management solution that
-            helps doctors, staff, and patients stay connected with a fast
-            and secure platform.
-          </p>
-
-          {/* Small Points */}
-          <div className="mt-8 space-y-4 text-gray-700">
-            <p>✔ Manage patients and medical records in one place</p>
-            <p>✔ Smart appointment booking and scheduling</p>
-            <p>✔ Secure digital prescriptions and reports</p>
-            <p>✔ Automated billing and smart analytics</p>
-          </div>
-        </div>
-
-        {/* RIGHT SIDE FEATURE CARDS */}
-        <div className="grid sm:grid-cols-2 gap-6">
-
-          {/* Feature 1 */}
-          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1">
-            <div className="flex gap-4">
-              <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white p-3 rounded-xl text-xl">
-                <UserOutlined />
-              </div>
-
+            <div className="flex gap-10 border-t border-slate-200 pt-10">
               <div>
-                <h3 className="text-lg font-semibold">Patient Management</h3>
-                <p className="text-gray-600 mt-1 text-sm">
-                  Store patient records securely and access them anytime.
-                </p>
+                <p className="text-2xl font-black text-slate-900">01.</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2">Deployment</p>
+              </div>
+              <div>
+                <p className="text-2xl font-black text-slate-900">02.</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2">Scaling</p>
+              </div>
+              <div>
+                <p className="text-2xl font-black text-slate-900">03.</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-2">Security</p>
               </div>
             </div>
           </div>
 
-          {/* Feature 2 */}
-          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1">
-            <div className="flex gap-4">
-              <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white p-3 rounded-xl text-xl">
-                <CalendarOutlined />
-              </div>
+          {/* ROUNDED CARDS GRID */}
+          <div className="lg:col-span-7 grid grid-cols-2 md:grid-cols-3 gap-6">
+            {featureList.map((item, idx) => (
+              <div key={idx} className="group relative aspect-square bg-white/40 backdrop-blur-md border border-white/50 p-8 flex flex-col justify-between hover:bg-slate-900 transition-all duration-500 hover:shadow-2xl rounded-[2.5rem]">
+                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-sky-500 group-hover:bg-white/10 group-hover:text-white transition-all shadow-sm">
+                  <item.icon size={22} />
+                </div>
 
-              <div>
-                <h3 className="text-lg font-semibold">Smart Appointments</h3>
-                <p className="text-gray-600 mt-1 text-sm">
-                  Easy scheduling for doctors and patients.
-                </p>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 group-hover:text-white uppercase tracking-tighter transition-colors mb-2">{item.title}</h3>
+                  <p className="text-[10px] font-bold text-slate-400 group-hover:text-slate-500 transition-colors leading-tight">{item.desc}</p>
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* Feature 3 */}
-          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1">
-            <div className="flex gap-4">
-              <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white p-3 rounded-xl text-xl">
-                <FileTextOutlined />
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold">Medical Records</h3>
-                <p className="text-gray-600 mt-1 text-sm">
-                  Digital prescriptions and patient reports anytime.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Feature 4 */}
-          <div className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-1">
-            <div className="flex gap-4">
-              <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white p-3 rounded-xl text-xl">
-                <HeartOutlined />
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold">Billing & Reports</h3>
-                <p className="text-gray-600 mt-1 text-sm">
-                  Generate invoices and track revenue easily.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
 
         </div>
@@ -117,3 +79,8 @@ const Features = () => {
 };
 
 export default Features;
+
+
+
+
+

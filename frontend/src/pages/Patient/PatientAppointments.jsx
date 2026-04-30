@@ -98,6 +98,10 @@ export default function PatientAppointments() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
+  const [patientReports, setPatientReports] = useState([]);
+  const [useVault, setUseVault] = useState(false);
+  const [selectedVaultReport, setSelectedVaultReport] = useState(null);
+
 
   const fetchAppointments = useCallback(async () => {
     if (!session?.id) return;
@@ -124,10 +128,24 @@ export default function PatientAppointments() {
   }, [fetchAppointments, messageApi, session?.id]);
 
   useEffect(() => {
+    const fetchPatientReports = async () => {
+      if (!session?.id) return;
+      try {
+        const { data } = await API.get(`/patient/${session.id}`);
+        setPatientReports(data.patient.reports || []);
+      } catch {
+        // silent
+      }
+    };
+    fetchPatientReports();
+  }, [session?.id]);
+
+  useEffect(() => {
     if (!form.hospitalId) {
       setDepartments([]);
       return;
     }
+
 
     const loadDepartments = async () => {
       try {
@@ -384,29 +402,46 @@ export default function PatientAppointments() {
   };
 
   const handleUploadReport = async () => {
-    if (!selectedAppointmentId || fileList.length === 0) return;
+    if (!selectedAppointmentId) return;
+    
+    if (useVault && !selectedVaultReport) {
+      return messageApi.error("Please select a report from your vault.");
+    }
+    
+    if (!useVault && fileList.length === 0) {
+      return messageApi.error("Please select a file to upload.");
+    }
 
     try {
       setUploading(true);
-      const formData = new FormData();
-      // fileList[0] is the raw File object from beforeUpload
-      formData.append("report", fileList[0]);
-      formData.append("category", reportCategory);
+      
+      if (useVault) {
+        await API.patch(`/appointment/${selectedAppointmentId}/link-report-vault`, {
+          reportFileName: selectedVaultReport.fileName,
+          category: selectedVaultReport.category
+        });
+      } else {
+        const formData = new FormData();
+        formData.append("report", fileList[0]);
+        formData.append("category", reportCategory);
 
-      await API.patch(`/appointment/${selectedAppointmentId}/patient-report`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+        await API.patch(`/appointment/${selectedAppointmentId}/patient-report`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
 
-      messageApi.success("Report uploaded successfully. Your doctor can now review it.");
+      messageApi.success("Report attached successfully.");
       setUploadModalVisible(false);
       setFileList([]);
+      setSelectedVaultReport(null);
       await fetchAppointments();
     } catch (error) {
-      messageApi.error(error?.response?.data?.message || "Failed to upload report.");
+      messageApi.error(error?.response?.data?.message || "Failed to attach report.");
     } finally {
       setUploading(false);
     }
   };
+
 
   const handleSubmitReview = async () => {
     if (!selectedAppointmentId) return;
@@ -481,108 +516,229 @@ export default function PatientAppointments() {
             key="submit"
             type="primary"
             loading={uploading}
-            disabled={fileList.length === 0}
+            disabled={!useVault && fileList.length === 0 || useVault && !selectedVaultReport}
             onClick={handleUploadReport}
             className="bg-slate-900 border-none h-10 px-6 rounded-xl"
           >
-            Upload Now
+            {useVault ? "Link from Vault" : "Upload Now"}
           </Button>
+
         ]}
       >
-        <div className="py-6">
-          <p className="text-sm text-slate-500 mb-6 leading-relaxed">
-            Please upload any relevant documents (blood reports, MRI scans, previous prescriptions) that will help your doctor understand your condition better.
-          </p>
-          
-          <div className="mb-6 space-y-2">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Document Category</label>
-            <Select 
-              value={reportCategory}
-              onChange={(v) => setReportCategory(v)}
-              className="w-full h-11 rounded-xl"
-              options={[
-                { label: "Lab Report", value: "Lab Report" },
-                { label: "Prescription", value: "Prescription" },
-                { label: "Other", value: "Other" },
-              ]}
-            />
+        <div className="py-4 space-y-6">
+          <div className="flex p-1 bg-slate-100 rounded-2xl">
+             <button 
+               onClick={() => setUseVault(false)}
+               className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition ${!useVault ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+             >
+               Upload New
+             </button>
+             <button 
+               onClick={() => setUseVault(true)}
+               className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition ${useVault ? "bg-white text-slate-900 shadow-sm" : "text-slate-400 hover:text-slate-600"}`}
+             >
+               Pick from Vault
+             </button>
           </div>
 
-          <Upload
-            onRemove={() => setFileList([])}
-            beforeUpload={(file) => {
-              setFileList([file]);
-              return false;
-            }}
-            fileList={fileList}
-            maxCount={1}
-          >
-            <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-8 bg-slate-50 hover:bg-slate-100 hover:border-sky-300 transition-all cursor-pointer w-full group">
-               <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition">
-                  <FileText size={24} className="text-slate-400 group-hover:text-sky-500" />
-               </div>
-               <p className="text-sm font-bold text-slate-700">Click to Select Document</p>
-               <p className="text-[10px] text-slate-400 mt-1">PDF, JPG, PNG up to 5MB</p>
+          {!useVault ? (
+            <div className="space-y-6">
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Upload a document directly to this appointment. This file will also be saved to your vault.
+              </p>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Document Category</label>
+                <Select 
+                  value={reportCategory}
+                  onChange={(v) => setReportCategory(v)}
+                  className="w-full h-11"
+                  options={[
+                    { label: "Lab Report", value: "Lab Report" },
+                    { label: "Prescription", value: "Prescription" },
+                    { label: "MRI / X-Ray", value: "MRI/X-Ray" },
+                    { label: "Other", value: "Other" },
+                  ]}
+                />
+              </div>
+              <Upload
+                onRemove={() => setFileList([])}
+                beforeUpload={(file) => {
+                  setFileList([file]);
+                  return false;
+                }}
+                fileList={fileList}
+                maxCount={1}
+              >
+                <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-8 bg-slate-50 hover:bg-slate-100 hover:border-sky-300 transition-all cursor-pointer w-full group">
+                   <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                      <FileText size={24} className="text-slate-400 group-hover:text-sky-500" />
+                   </div>
+                   <p className="text-sm font-bold text-slate-700">Click to Select Document</p>
+                   <p className="text-[10px] text-slate-400 mt-1">PDF, JPG, PNG up to 5MB</p>
+                </div>
+              </Upload>
             </div>
-          </Upload>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Select a previously uploaded document from your personal medical vault.
+              </p>
+              {patientReports.length === 0 ? (
+                <Empty description="Your vault is empty" className="py-8" />
+              ) : (
+                <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto pr-2">
+                  {patientReports.map((report) => (
+                    <div 
+                      key={report._id}
+                      onClick={() => setSelectedVaultReport(report)}
+                      className={`p-3 rounded-2xl border cursor-pointer transition flex items-center justify-between ${selectedVaultReport?._id === report._id ? "border-sky-500 bg-sky-50" : "border-slate-100 hover:border-slate-200"}`}
+                    >
+                      <div className="flex items-center gap-3">
+                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${selectedVaultReport?._id === report._id ? "bg-sky-500 text-white" : "bg-slate-100 text-slate-400"}`}>
+                            <FileText size={16} />
+                         </div>
+                         <div>
+                            <p className="text-[11px] font-black text-slate-800 leading-tight">{report.category}</p>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Uploaded {new Date(report.uploadDate).toLocaleDateString()}</p>
+                         </div>
+                      </div>
+                      {selectedVaultReport?._id === report._id && <CheckCircle2 size={16} className="text-sky-500" />}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
+
       </Modal>
 
       <div className="space-y-6">
         <section className="grid gap-4 lg:grid-cols-3">
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
-            <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2 relative overflow-hidden group">
+            <div className="absolute -right-8 -top-8 w-32 h-32 bg-sky-50 rounded-full blur-3xl group-hover:bg-sky-100 transition-colors" />
+            <div className="flex flex-wrap items-start justify-between gap-4 relative z-10">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">Fast Appointment Flow</p>
-                <h3 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">Location to slot, in the right order</h3>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                  Search your location or use current location, convert it into latitude and longitude, find nearby hospitals inside a radius, then continue with department, doctor, date, and live slots.
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 border border-sky-100 mb-4">
+                  <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
+                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-sky-700">Intelligent Booking System</p>
+                </div>
+                <h3 className="text-3xl font-black tracking-tight text-slate-900 leading-tight">
+                  Find care that's <span className="text-sky-600 italic">closer</span> to you.
+                </h3>
+                <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-500 font-medium">
+                  Select your area, set a search radius, and our smart engine will instantly connect you with the best nearby hospitals and specialized doctors.
                 </p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right">
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Active Bookings</p>
-                <p className="mt-1 text-3xl font-semibold text-slate-900">{bookedCount}</p>
+              <div className="rounded-2xl border border-slate-100 bg-slate-50/50 backdrop-blur-sm px-6 py-4 text-right">
+                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Your Active Visits</p>
+                <p className="mt-1 text-4xl font-black text-slate-900 leading-none">{bookedCount}</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Next Visit</p>
+
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm relative overflow-hidden">
+            <div className="absolute -left-4 -bottom-4 w-24 h-24 bg-rose-50 rounded-full blur-2xl opacity-60" />
+            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-rose-400 mb-4 flex items-center gap-2">
+              <span className="w-1 h-1 rounded-full bg-rose-400" /> Upcoming Consultation
+            </p>
             {upcomingAppointment ? (
-              <div className="mt-4 space-y-3">
-                <div className="inline-flex rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-700">
-                  {formatDate(upcomingAppointment.date)}
+              <div className="mt-4 space-y-4 relative z-10">
+                <div className="inline-flex rounded-xl bg-slate-900 px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-white">
+                   {formatDate(upcomingAppointment.date, { weekday: "short", day: "2-digit", month: "short" })}
                 </div>
-                <h4 className="text-lg font-semibold text-slate-900">
-                  {upcomingAppointment.doctorId?.name || "Doctor assigned soon"}
-                </h4>
-                <p className="text-sm text-slate-500">
-                  {upcomingAppointment.departmentId?.name || "Department"} at {upcomingAppointment.hospitalId?.name || "Hospital"}
-                </p>
-                <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <Clock3 size={16} />
-                  <span>{upcomingAppointment.slotTime}</span>
+                <div>
+                  <h4 className="text-xl font-black text-slate-900 leading-tight">
+                    Dr. {upcomingAppointment.doctorId?.name || "Assigning..." }
+                  </h4>
+                  <p className="text-xs text-slate-500 font-bold mt-1 uppercase tracking-wider">
+                    {upcomingAppointment.departmentId?.name} Department
+                  </p>
+                </div>
+                <div className="flex items-center gap-4 border-t border-slate-50 pt-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-50 px-3 py-2 rounded-xl">
+                    <Clock3 size={14} className="text-sky-500" />
+                    <span>{upcomingAppointment.slotTime}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-50 px-3 py-2 rounded-xl">
+                    <Hospital size={14} className="text-rose-500" />
+                    <span>{upcomingAppointment.hospitalId?.name?.split(" ")[0]}</span>
+                  </div>
                 </div>
               </div>
             ) : (
-              <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No upcoming appointments yet" className="mt-6" />
+              <div className="py-8 flex flex-col items-center justify-center text-center">
+                <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center mb-3">
+                  <CalendarCheck2 size={24} className="text-slate-300" />
+                </div>
+                <p className="text-xs font-bold text-slate-400 tracking-tight">No upcoming visits</p>
+              </div>
             )}
           </div>
+
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.2fr,0.8fr]">
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Step 1 to 6</p>
-              <h3 className="mt-2 text-xl font-semibold text-slate-900">Configure your appointment</h3>
+          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm lg:col-span-1">
+            <div className="mb-8">
+              <p className="text-[10px] font-black uppercase tracking-[0.15em] text-sky-500 mb-2">How it works</p>
+              <h3 className="text-2xl font-black text-slate-900 leading-tight">Smart Booking Tutorial</h3>
             </div>
 
-            <div className="space-y-5">
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
-                  <MapPinned size={16} />
-                  <span>1. Choose location and radius</span>
+            <div className="space-y-6">
+              {[
+                { step: "01", title: "Set Location", desc: "Enter your area or use GPS to find hospitals near you.", icon: <LocateFixed size={18} className="text-sky-500" /> },
+                { step: "02", title: "Pick Hospital", desc: "Choose from a list of hospitals within your preferred radius.", icon: <Hospital size={18} className="text-rose-500" /> },
+                { step: "03", title: "Select Specialist", desc: "Browse doctors by department and view their availability.", icon: <Stethoscope size={18} className="text-emerald-500" /> },
+                { step: "04", title: "Confirm Slot", desc: "Pick a date and a live time slot to finalize your booking.", icon: <Clock3 size={18} className="text-amber-500" /> },
+              ].map((item, idx) => (
+                <div key={idx} className="flex gap-4 group">
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center text-[10px] font-black shrink-0 group-hover:scale-110 transition-transform">
+                      {item.step}
+                    </div>
+                    {idx !== 3 && <div className="w-0.5 h-full bg-slate-100 my-1" />}
+                  </div>
+                  <div className="pb-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      {item.icon}
+                      <h4 className="text-sm font-black text-slate-800">{item.title}</h4>
+                    </div>
+                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">{item.desc}</p>
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            <div className="mt-4 p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
+               <p className="text-[10px] font-black text-emerald-700 uppercase tracking-widest mb-1 flex items-center gap-2">
+                  <CheckCircle2 size={12} /> Pro Tip
+               </p>
+               <p className="text-[11px] text-emerald-800 font-medium leading-relaxed">
+                  Upload your previous medical reports while booking. This helps doctors prepare for your consultation in advance.
+               </p>
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-slate-200 bg-white p-8 shadow-sm lg:col-span-2">
+            <div className="mb-8 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-400">Configuration</p>
+                <h3 className="mt-1 text-2xl font-black text-slate-900">Book your appointment</h3>
+              </div>
+              <div className="hidden md:flex gap-1">
+                 {[1,2,3,4,5,6].map(i => <div key={i} className={`w-6 h-1.5 rounded-full ${i <= (form.slotTime ? 6 : form.date ? 5 : form.doctorId ? 4 : form.departmentId ? 3 : form.hospitalId ? 2 : 1) ? "bg-sky-500" : "bg-slate-100"}`} />)}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="rounded-[32px] border border-slate-100 bg-slate-50/50 p-6">
+                <div className="mb-4 flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-500">
+                  <MapPinned size={14} className="text-sky-500" />
+                  <span>1. Location & Range</span>
+                </div>
+
 
                 <div className="grid gap-4 md:grid-cols-[1fr,160px]">
                   <Input
@@ -836,31 +992,45 @@ export default function PatientAppointments() {
                   key={appointment._id}
                   className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-slate-50 p-5 lg:flex-row lg:items-center lg:justify-between"
                 >
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+                  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8 flex-1">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Doctor</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">{appointment.doctorId?.name || "Doctor"}</p>
-                      <p className="text-sm text-slate-500">{appointment.doctorId?.specialization || "Specialty pending"}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Physician</p>
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-sky-100 flex items-center justify-center text-sky-600">
+                           <Stethoscope size={14} />
+                        </div>
+                        <div>
+                          <p className="text-sm font-black text-slate-800 leading-tight">{appointment.doctorId?.name || "Doctor"}</p>
+                          <p className="text-[10px] text-slate-500 font-bold mt-0.5">{appointment.doctorId?.specialization || "General"}</p>
+                        </div>
+                      </div>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Department</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">{appointment.departmentId?.name || "Department"}</p>
-                      <p className="text-sm text-slate-500">{appointment.hospitalId?.name || "Hospital"}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Medical Center</p>
+                      <p className="text-sm font-black text-slate-800 leading-tight truncate">{appointment.hospitalId?.name || "Hospital"}</p>
+                      <p className="text-[10px] text-slate-500 font-bold mt-0.5">{appointment.departmentId?.name || "OPD"}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Date</p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">{formatDate(appointment.date)}</p>
-                      <p className="text-sm text-slate-500">{appointment.slotTime}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Schedule</p>
+                      <p className="text-sm font-black text-slate-800 leading-tight">{formatDate(appointment.date, { day: "2-digit", month: "short" })}</p>
+                      <p className="text-[10px] text-sky-600 font-black mt-0.5 flex items-center gap-1"><Clock3 size={10} /> {appointment.slotTime}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Status</p>
-                      <div className="mt-2">
-                        <Tag color={appointment.status === "completed" ? "green" : appointment.status === "booked" ? "blue" : "default"} className="rounded-full px-3 py-1">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Booking Status</p>
+                      <div className="mt-1">
+                        <Tag 
+                          className={`rounded-full px-3 py-0.5 border-none text-[10px] font-black uppercase tracking-widest ${
+                            appointment.status === "completed" ? "bg-emerald-50 text-emerald-600" : 
+                            appointment.status === "booked" ? "bg-sky-50 text-sky-600" : 
+                            "bg-slate-100 text-slate-500"
+                          }`}
+                        >
                           {appointment.status}
                         </Tag>
                       </div>
                     </div>
                   </div>
+
 
                   <div className="flex items-center gap-3">
                     {appointment.status === "booked" && (
@@ -886,38 +1056,51 @@ export default function PatientAppointments() {
                       </>
                     )}
                     {appointment.status === "completed" && (
-                      <div className="flex items-center gap-3">
-                        {appointment.review ? (
-                          <div className="flex flex-col items-end gap-1">
-                            <Rate disabled defaultValue={appointment.rating} className="text-[12px]" />
-                            <div className="max-w-[200px] text-right">
-                              <p className="text-[11px] text-slate-600 italic leading-tight line-clamp-2">
-                                "{appointment.review}"
-                              </p>
+                      <div className="flex flex-col items-end gap-3">
+                        <div className="flex items-center gap-3">
+                          {appointment.review ? (
+                            <div className="flex flex-col items-end gap-1">
+                              <Rate disabled defaultValue={appointment.rating} className="text-[12px]" />
+                              <div className="max-w-[200px] text-right">
+                                <p className="text-[11px] text-slate-600 italic leading-tight line-clamp-2">
+                                  "{appointment.review}"
+                                </p>
+                              </div>
                             </div>
+                          ) : (
+                            <Button 
+                              icon={<Star size={14} />} 
+                              onClick={() => {
+                                setSelectedAppointmentId(appointment._id);
+                                setReviewModalVisible(true);
+                              }}
+                              className="rounded-xl h-9 px-4 border-amber-200 text-amber-600 font-bold hover:border-amber-400 hover:text-amber-700 transition-all bg-amber-50/50"
+                            >
+                              Rate Visit
+                            </Button>
+                          )}
+                          {appointment.patientReport && (
+                            <Tag 
+                              color="success" 
+                              className="rounded-full px-3 py-1 flex items-center gap-1 border-none bg-green-50 text-green-700 font-bold cursor-pointer hover:bg-green-100"
+                              onClick={() => window.open(`http://localhost:7070/uploads/prescriptions/${appointment.patientReport}`, "_blank")}
+                            >
+                              <CheckCircle2 size={12} /> {appointment.patientReportCategory || "Report"} Attached
+                            </Tag>
+                          )}
+                        </div>
+                        {appointment.reportReview && (
+                          <div className="bg-sky-50 border border-sky-100 rounded-2xl p-3 max-w-[280px]">
+                            <p className="text-[10px] font-bold text-sky-700 uppercase tracking-wider mb-1 flex items-center gap-1">
+                              <FileText size={10} /> Doctor's Feedback on Report
+                            </p>
+                            <p className="text-xs text-sky-800 leading-relaxed italic">
+                              "{appointment.reportReview}"
+                            </p>
                           </div>
-                        ) : (
-                          <Button 
-                            icon={<Star size={14} />} 
-                            onClick={() => {
-                              setSelectedAppointmentId(appointment._id);
-                              setReviewModalVisible(true);
-                            }}
-                            className="rounded-xl h-9 px-4 border-amber-200 text-amber-600 font-bold hover:border-amber-400 hover:text-amber-700 transition-all bg-amber-50/50"
-                          >
-                            Rate Visit
-                          </Button>
-                        )}
-                        {appointment.patientReport && (
-                          <Tag 
-                            color="success" 
-                            className="rounded-full px-3 py-1 flex items-center gap-1 border-none bg-green-50 text-green-700 font-bold cursor-pointer hover:bg-green-100"
-                            onClick={() => window.open(`http://localhost:7070/uploads/prescriptions/${appointment.patientReport}`, "_blank")}
-                          >
-                            <CheckCircle2 size={12} /> {appointment.patientReportCategory || "Report"} Attached
-                          </Tag>
                         )}
                       </div>
+
                     )}
                     {appointment.prescriptionFile && (
                       <Tag 

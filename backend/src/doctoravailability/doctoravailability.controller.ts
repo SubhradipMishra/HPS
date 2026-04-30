@@ -67,3 +67,51 @@ export const createDoctorAvailability = async (req: Request, res: Response) => {
         });
     }
 };
+
+// GET doctor availabilities
+export const getDoctorAvailabilities = async (req: Request, res: Response) => {
+    try {
+        const { doctorId, hospitalId } = req.params;
+
+        const availabilities = await DoctorAvailabilityModel.find({
+            doctorId,
+            hospitalId,
+        });
+
+        return res.status(200).json({
+            success: true,
+            availabilities,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server error",
+        });
+    }
+};
+
+// DELETE doctor availability
+export const deleteDoctorAvailability = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+
+        const availability = await DoctorAvailabilityModel.findByIdAndDelete(id);
+
+        if (!availability) {
+            return res.status(404).json({
+                success: false,
+                message: "Availability record not found",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Doctor availability deleted successfully",
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server error",
+        });
+    }
+};
